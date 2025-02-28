@@ -1,6 +1,6 @@
 from unifr_api_epuck import wrapper
 
-MY_IP = '192.168.2.208' # modify the last number with the last 3 digits of the robot ID (on sticker)
+MY_IP = '192.168.2.205' # modify the last number with the last 3 digits of the robot ID (on sticker)
 robot = wrapper.get_robot(MY_IP)
 
 counter = 0

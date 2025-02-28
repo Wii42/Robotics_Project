@@ -1,7 +1,7 @@
 # Basic lover implementation
 from unifr_api_epuck import wrapper
 
-MY_IP = '192.168.2.206'  # change robot number
+MY_IP = '192.168.2.205'  # change robot number
 robot = wrapper.get_robot(MY_IP)
 
 NORM_SPEED = 1.5
