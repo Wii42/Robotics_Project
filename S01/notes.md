@@ -1,0 +1,3 @@
+ - nur die 2 frontfacing(vorne) sensoren nutzen, da die anderen irrelevant
+ - durchschnitt beider sensoren
+ - gleitender durchschnitt über zeit/steps
