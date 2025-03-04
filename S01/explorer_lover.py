@@ -1,13 +1,13 @@
 from enum import Enum
-
-from numpy.ma.extras import average
+import time
+import random
 # Basic lover implementation
 from unifr_api_epuck import wrapper
 
-MY_IP = '192.168.2.206'  # change robot number
+MY_IP = '192.168.2.204'  # change robot number
 robot = wrapper.get_robot(MY_IP)
 
-NORM_SPEED = 1.5
+NORM_SPEED = 4
 MAX_PROX = 250
 
 WEIGHT_FRONT = 1
@@ -16,7 +16,7 @@ WEIGHT_SIDE = 3
 WEIGHT_BACK = 4
 WEIGHT_SUM = WEIGHT_FRONT + WEIGHT_FRONT_SIDE + WEIGHT_SIDE + WEIGHT_BACK
 
-SPEED_0 = 0.1 # speed under which the robot is considered stationary
+SPEED_0 = 0.1*NORM_SPEED # speed under which the robot is considered stationary
 
 equilibrium_counter = 0
 
@@ -47,10 +47,10 @@ class State(Enum):
 
 def lover_state(prox_values):
     global equilibrium_counter
-    prox_l = (prox_values[7] * WEIGHT_FRONT + prox_values[6] * WEIGHT_FRONT_SIDE + prox_values[5] * WEIGHT_SUM +
+    prox_l = (prox_values[7] * WEIGHT_FRONT + prox_values[6] * WEIGHT_FRONT_SIDE + prox_values[5] * WEIGHT_SIDE +
                   prox_values[4] * WEIGHT_BACK) / WEIGHT_SUM
     prox_r = (prox_values[0] * WEIGHT_FRONT + prox_values[1] * WEIGHT_FRONT_SIDE + prox_values[2] * WEIGHT_SIDE +
-                  prox_values[3] * WEIGHT_BACK) / WEIGHT_BACK
+                  prox_values[3] * WEIGHT_BACK) / WEIGHT_SUM
 
     speed_left = control_wheel(prox_l)
     speed_right = control_wheel(prox_r)
@@ -61,40 +61,101 @@ def lover_state(prox_values):
 
     robot.set_speed(control_wheel(prox_l), control_wheel(prox_r))
 def explorer_away_state(prox_values):
+    global state
+    if is_further_than_value(prox_values, 50):
+        print('chooser')
+        state = State.EXPLORER_CHOOSER
 
-    print(prox_values)
-    front = (prox_values[6]+prox_values[7]+prox_values[0]+prox_values[1])/4
-    back = (prox_values[2] + prox_values[3] + prox_values[4] + prox_values[5]) / 4
-    left = (prox_values[7] + prox_values[6] + prox_values[5] + prox_values[4]) / 4
-    right = (prox_values[0] + prox_values[1] + prox_values[2] + prox_values[3]) / 4
-    speed_left = (left * 7) / 3000
-    speed_right = (right * 7) / 3000
-    if front*5 > back and front > 100:
-        print('turn on spot')
-        if speed_right > speed_left:
-            speed_left = -speed_right
+    prox_l = (prox_values[7] + prox_values[6]+ prox_values[5] +
+              prox_values[4]) / 4
+    prox_r = (prox_values[0] + prox_values[1] + prox_values[2] +
+              prox_values[3]) / 4
+
+    speed_left = control_wheel(prox_l)
+    speed_right = control_wheel(prox_r)
+    robot.set_speed(speed_right, speed_left)
+    return
+ #
+ #
+ #   if is_further_than_value(prox_values, 50):
+ #       print('chooser')
+ #       state = State.EXPLORER_CHOOSER
+ #       return
+ #   #print(prox_values)
+ #   front = (prox_values[6]+prox_values[7]+prox_values[0]+prox_values[1])/4
+ #   back = (prox_values[2] + prox_values[3] + prox_values[4] + prox_values[5]) / 4
+ #   left = (prox_values[7] + prox_values[6] + prox_values[5] + prox_values[4]) / 4
+ #   right = (prox_values[0] + prox_values[1] + prox_values[2] + prox_values[3]) / 4
+ #   speed_left = (left * 7) / 3000
+ #   speed_right = (right * 7) / 3000
+ #   if front*5 > back and front > 100:
+ #       #print('turn on spot')
+ #       if speed_right > speed_left:
+ #           speed_left = -NORM_SPEED
+ #           speed_right = NORM_SPEED
+ #       else:
+ #           speed_right = -NORM_SPEED
+ #           speed_left = NORM_SPEED
+ #   else:
+ #       pass
+ #       speed_left = NORM_SPEED
+ #       speed_right = NORM_SPEED
+ #
+ #
+ #   robot.set_speed(speed_left, speed_right)
+
+def explorer_chooser_state(prox_values):
+    global state
+    prox_l = (prox_values[7] + prox_values[6] + prox_values[5] +
+              prox_values[4]) / 4
+    prox_r = (prox_values[0] + prox_values[1] + prox_values[2] +
+              prox_values[3]) / 4
+
+    speed_left = control_wheel(prox_l)
+    speed_right = control_wheel(prox_r)
+    robot.set_speed(speed_right, speed_left)
+
+    if not  is_further_than_value(prox_values, 100):
+        random.seed(time.time())
+        choice = random.randint(1,100)
+        print(choice)
+        if choice < 40:
+            state = State.LOVER
+            print('chose lover')
         else:
-            speed_right = -speed_left
-    else:
-        speed_left = NORM_SPEED
-        speed_right = NORM_SPEED
+            state = State.EXPLORER_AWAY
+            print('chose explorer away')
 
 
-    robot.set_speed(speed_left, speed_right)
+
+
+
+def is_further_than_value(prox_values, value):
+    for v in prox_values:
+        if v > value:
+            return False
+    return True
 
 state = State.LOVER
 
 robot.init_sensors()
 robot.calibrate_prox()
 # infinite loop
+print("battery level")
+print(robot.get_battery_level())
 while robot.go_on():
     prox_values = robot.get_calibrate_prox()
     match state:
         case State.LOVER:
             lover_state(prox_values)
+            robot.enable_all_led()
         case State.EXPLORER_AWAY:
             explorer_away_state(prox_values)
-    if equilibrium_counter >= 10:
+            robot.disable_all_led()
+        case State.EXPLORER_CHOOSER:
+            explorer_chooser_state(prox_values)
+            robot.disable_all_led()
+    if equilibrium_counter >= 3:
         print('end')
         state = State.EXPLORER_AWAY
         equilibrium_counter = 0
