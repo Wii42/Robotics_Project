@@ -1,8 +1,8 @@
 # run the code to generate IR sensor data 
 from unifr_api_epuck import wrapper
 
-MY_IP = '192.168.2.206'
-MAX_STEPS = 300
+MY_IP = '192.168.2.207'
+MAX_STEPS = 750
 
 robot = wrapper.get_robot(MY_IP)
 
@@ -33,6 +33,8 @@ for step in range(MAX_STEPS):
     for v in gs:
         data.write(str(v)+',')
     data.write('\n')
+
+    robot.set_speed(2, 2)
     
 data.close()
 
