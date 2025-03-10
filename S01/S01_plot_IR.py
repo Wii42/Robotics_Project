@@ -5,20 +5,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # get data from CSV file
-csv = pd.read_csv('IRsensors.csv', index_col=0)
+csv: pd.DataFrame = pd.read_csv('IRsensors.csv', index_col=0)
 
 # drop last empty column
 csv.drop(csv.columns[8], axis=1, inplace = True)
+front_sensors = csv[['ps0', 'ps7']].copy()
+front_sensors.rename(columns={"ps0": "Front right", "ps7": "Front left"}, inplace=True)
+front_sensors['Average'] = front_sensors.mean(axis=1)
 
-# plot single sensor one by one with subplots
-csv.plot(subplots=True,sharey='col')
-# save plot
-plt.savefig('calibrated_IR_sensors_single.png')
-plt.show()
-
-# plot all sensors on single plot
-csv.plot()
+front_sensors.plot(color=['orange', 'cyan', 'grey', 'red'])
 # set the legend on right corner
 plt.legend(loc='upper right')
 plt.savefig('calibrated_IR_sensors.png')
-plt.show() 
+plt.show()

@@ -4,7 +4,7 @@ import random
 # Basic lover implementation
 from unifr_api_epuck import wrapper
 
-from S01_advanced_lover import move_lover
+from lover import move_lover
 
 MY_IP = '192.168.2.214'  # change robot number
 robot = wrapper.get_robot(MY_IP)
@@ -23,7 +23,6 @@ def control_wheel(prox):
 
 
 def is_equilibrium(prox_values, speed_left, speed_right):
-    # print(f'{prox_values[-1]} {prox_values[0]}')
     is_slow = abs(speed_left) < SPEED_0 and abs(speed_right) < SPEED_0
 
     return is_close(prox_values[0]) and is_close(prox_values[-1]) and is_slow
@@ -48,6 +47,8 @@ def lover_state(prox_values):
     if is_equilibrium(prox_values, speed_left, speed_right):
         print('equilibrium')
         counter += 1
+    else:
+        counter = 0
 
     robot.set_speed(speed_left, speed_right)
 
@@ -65,9 +66,9 @@ def explorer_move(prox_values):
 def explorer_away_state(prox_values):
     global counter
     if is_further_than_value(prox_values, 50):
-        print('chooser')
         counter+=1
-
+    else:
+        counter = 0
     explorer_move(prox_values)
 
 def explorer_chooser_state(prox_values):
@@ -75,8 +76,9 @@ def explorer_chooser_state(prox_values):
     explorer_move(prox_values)
 
     if not  is_further_than_value(prox_values, 100):
-        print('is away from objects')
         counter+=1
+    else:
+        counter = 0
    
    
 def explorer_choose_state():

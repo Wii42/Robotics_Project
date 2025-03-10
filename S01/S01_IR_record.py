@@ -10,7 +10,7 @@ robot.init_sensors()
 robot.calibrate_prox()
 
 #open file for writing
-data = open("IRsensors.csv", "w")
+data = open("IRsensors_3.csv", "w")
 
 if data == None:
     print('Error opening data file!\n')
