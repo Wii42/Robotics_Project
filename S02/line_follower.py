@@ -36,6 +36,39 @@ def binary_approach(gs: list[int]) -> tuple[float, float] | None:
             print("ERROR")
             return None
 
+
+def two_sensors_approach(gs: list[int]) -> tuple[float, float] | None:
+    black_list: list[bool] = [is_black(v) for v in gs]
+    print(black_list)
+    match black_list:
+        case [False, False, False]:  #0: no black
+            print("no black, ERROR")
+            return -NORM_SPEED, NORM_SPEED
+        case [False, False, True]:  #1: extremely far left
+            print("is extremely far left")
+            return NORM_SPEED, -NORM_SPEED
+        case [False, True, False]: # 2: ERROR
+            print("ERROR, 010")
+            return None
+        case [False, True, True]:  # 3: far left
+            print(" is far left")
+            return NORM_SPEED, -NORM_SPEED
+        case [True, False, False]:  # 4: right
+            print("is right")
+            return 0, NORM_SPEED
+        case [True, False, True]:  # 5: ERROR
+            print("ERROR, 101")
+            return None
+        case [True, True, False]:  #6: middle
+            print("middle")
+            return NORM_SPEED*2, NORM_SPEED*2
+        case [True, True, True]: # 7: left
+            print('is left')
+            return NORM_SPEED, 0
+        case _:  # else
+            print("ERROR: should not be possible")
+            return None
+
 def calc_speed(value: int):
     return -(value - 900) / 300
 
@@ -58,9 +91,9 @@ def main():
     while robot.go_on():
         robot.go_on()
         gs: list[int] = robot.get_ground()
-        print(gs)
+        #print(gs)
 
-        r = binary_approach(gs)
+        r = two_sensors_approach(gs)
         if r is not None:
             robot.set_speed(r[0], r[1])
         else:
