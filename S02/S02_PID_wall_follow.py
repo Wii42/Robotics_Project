@@ -5,7 +5,7 @@ import os # for log files
 
 import signal
 
-MY_IP = '192.168.43.153'
+MY_IP = '192.168.2.207' # modify the last number with the last 3 digits of the robot ID (on sticker)
 robot = wrapper.get_robot(MY_IP)
 
 def handler(signum, frame):
@@ -23,7 +23,7 @@ c = 1
 d = 0
 
 # PID parameters
-K = XXX
+K = 0.0062
 T_D = 0
 
 T_I = 9999999999  #optional
@@ -63,7 +63,7 @@ class PID:
 
 # open file for writing (adding a number if already exists)
 n = 0
-while os.path.exists("logPID_{}.csv".format(n)):
+while os.path.exists(f"logPID_{n:02}.csv"):
     n += 1
 data = open("logPID_{}.csv".format(n), "w")
 
