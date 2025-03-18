@@ -5,18 +5,18 @@ import matplotlib.pyplot as plt
 
 # select data to plot
 columns = [
-#    'tof',
-#    'accX',
-#    'accY',
-#    'accZ',
+    'tof',
+    #'accX',
+    #'accY',
+    #'accZ',
 #    'acc',
-    'incl',
-    'orient',
-    'roll',
-    'pitch',
-    'gyroX',
-    'gyroY',
-#    'gyroZ',
+#    'incl',
+#    'orient',
+#    'roll',
+#    'pitch',
+    #'gyroX',
+    #'gyroY',
+    #'gyroZ',
 #    'mic0',
 #    'mic1',
 #    'mic2',
@@ -25,7 +25,7 @@ columns = [
      ]
 
 # get data from CSV file
-csv = pd.read_csv('ADDsensors.csv', index_col=0)
+csv = pd.read_csv('ADDsensors_tof_red_3.csv', index_col=0)
 
 # drop last empty column
 csv.drop(csv.columns[-1], axis=1, inplace = True)

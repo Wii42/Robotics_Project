@@ -1,13 +1,15 @@
 # run the script to generate additional sensor data 
 from unifr_api_epuck import wrapper
 
-MY_IP = '172.20.10.14'
-MAX_STEPS = 300
+MY_IP = '192.168.2.214'
+MAX_STEPS = 1800
 
 robot = wrapper.get_robot(MY_IP)
+robot.init_sensors()
+robot.init_tof()
 
 #open file for writing
-data = open("ADDsensors.csv", "w")
+data = open("ADDsensors_tof_red_3.csv", "w")
 
 if data == None:
     print('Error opening data file!\n')
@@ -28,6 +30,8 @@ robot.sleep(3)
 
 for step in range(MAX_STEPS):
     robot.go_on()
+    robot.set_speed(-2,-2)
+
     
     #write a line of data 
     data.write(str(step)+',')

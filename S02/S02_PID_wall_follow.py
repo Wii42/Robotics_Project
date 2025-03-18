@@ -24,7 +24,7 @@ d = 0
 
 # PID parameters
 K = 0.0062
-T_D = 0
+T_D= 0.0525
 
 T_I = 9999999999  #optional
 

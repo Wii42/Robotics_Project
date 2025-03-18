@@ -7,7 +7,7 @@ import glob
 
 # find all files
 FILENAME='./logPID_*'
-files = sorted(glob.glob(FILENAME))
+files = sorted(glob.glob(FILENAME))[-10:]
 
 print(files)
 

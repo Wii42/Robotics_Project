@@ -14,4 +14,28 @@ Mit Roboter 207,versuchte werte:
 0.0061625: nicht so gut.
 0.00618:nicht so gut.
 0.006: viel zu klein.
-0.0062125: nict so gut
+0.0062125: nict so gut.
+Heute, 18/02, 0.062 ist die beste Wahl. Weil Umgebung gut ist, Sonne nicht da ist, dann keinen Einfluss auf den Infrarot Sensoren (23.csv) .
+Unsere Skala, zwischen 0 und -1 kalibriert.
+b) Wir sind mit k=0.062, wir brauchen diesen Wert für den Bericht.(24.csv)
+c) ds und left_speed sind symmetrisch zueinander. Mit verschiedenen Achsen.
+d) Done.
+e)Plot 24.csv in diesem Fall auswählen, in plot.py, parameter:[-1] mit [24] ersetzen.
+f) Parameter Graphik erstellen Skala definieren und angeben. Idee: relativ gut graph nebeneinander stellen und vergleichen.
+g) T_D ändern:
+Bei T_D= 1, nicht gut.[26.csv]
+Bei T_D= 0.01, ideal wert, funktionniert bestens.[27.csv]
+Bei T_D= -0.01, nicht gut , beschränkung ab jetzt auf positiven Werten[28.csv]
+Bei T_D = 0.02, auch nicht gut, beschränkung sehr nach um den 0 Punkt[29.csv]
+Bei T_D = 0.0001, nicht ideal.[30.csv]
+Bei T_D = 0.001, nicht ideal [31.csv]
+Züruck zu T_D = 0, Anfangswert, wir sehen dass das Roboter näher an der Wand ist, aber geht gerade wieder weg.[32.csv]
+Bei T_D= 0.05, nicht ideal[34.csv]
+Zurück zu T_D= 0.001, nicht ideal[35.csv]
+T_D = 0.05 (36.csv), beste Wahl bisher.
+T_D = 0.055 (38.csv, 37.csv), besser.
+T_D= 0.0525 (39.csv), Am besten, wir halten den Wert.
+Wir schliessen aus, mit allen Resultaten, dass T_D=0.0525 die beste Wahl ist.
+
+
+ecke: beobachtung: "stottern" in der ecke, vgl logPID_ecke.csv, logPID_ecke_2.csv
