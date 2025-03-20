@@ -25,24 +25,29 @@ columns = [
      ]
 
 # get data from CSV file
-csv = pd.read_csv('ADDsensors_tof_red_3.csv', index_col=0)
+colors = ['white', 'red', 'blue']
+for color in colors:
+    for i in range(1,4):
 
-# drop last empty column
-csv.drop(csv.columns[-1], axis=1, inplace = True)
 
-# select columns to plot (removing placeholder)
-new_csv = csv[columns[:-1]]
-csv = new_csv
+        csv = pd.read_csv(f'ADDsensors_tof_{color}_{i}.csv', index_col=0)
 
-# plot single sensor one by one with subplots
-csv.plot(subplots=True)
-# save plot
-plt.savefig('additional_sensors_single.png')
-plt.show()
+        # drop last empty column
+        csv.drop(csv.columns[-1], axis=1, inplace = True)
 
-# plot all sensors on single plot
-csv.plot()
-# set the legend on right corner
-plt.legend(loc='upper right')
-plt.savefig('additional_sensors.png')
-plt.show() 
+        # select columns to plot (removing placeholder)
+        new_csv = csv[columns[:-1]]
+        csv = new_csv
+
+        ## plot single sensor one by one with subplots
+        #csv.plot(subplots=True)
+        ## save plot
+        #plt.savefig(f'additional_sensors_single.png')
+        #plt.show()
+
+        # plot all sensors on single plot
+        csv.plot()
+        # set the legend on right corner
+        plt.legend(loc='upper right')
+        plt.savefig(f'additional_sensors_{color}_{i}.png')
+        plt.show()
