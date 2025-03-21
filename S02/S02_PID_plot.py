@@ -9,7 +9,7 @@ import glob
 FILENAME='./logPID*'
 
 # use last
-file = sorted(glob.glob(FILENAME))[39]
+file = sorted(glob.glob(FILENAME))[-1]
 print(file)
 print("using log file "+file)
 
