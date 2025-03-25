@@ -10,6 +10,7 @@ FILENAME='./logPID*'
 
 # use last
 file = sorted(glob.glob(FILENAME))[-1]
+print(file)
 print("using log file "+file)
 
 # get data from CSV file
@@ -18,6 +19,7 @@ log.drop(log.columns[0:3], axis=1, inplace = True)
 
 # plot data
 log.plot(subplots=True,figsize=(12,9))
+
 plt.legend(loc='upper right')
 plt.savefig('PID_single.png')
 plt.show()
