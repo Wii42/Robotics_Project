@@ -58,7 +58,7 @@ def camera_histogram(name,letterbox=False,letterbox_width=10) :
     plt.savefig(name+'.png')
     plt.show()
 
-img = mpimg.imread('./images/image003.bmp') # do not use the first image as it may be black while the camera gets ready
+img = mpimg.imread('./images_216_blue1/image003.bmp') # do not use the first image as it may be black while the camera gets ready
 
 camera_histogram('histogram')
 camera_histogram('histogram_letterbox',letterbox=True)

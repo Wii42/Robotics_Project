@@ -4,22 +4,24 @@ import numpy as np
 import os
 import time
 
+dir = "./img_ex2_2"
+
 # create directory
 try: 
-    os.mkdir("./img") 
+    os.mkdir(dir)
 except OSError as error: 
     print(error) 
 
-MY_IP = '172.20.10.14'
+MY_IP = '192.168.2.205'
 MAX_STEPS = 200
 
 robot = wrapper.get_robot(MY_IP)
 
 robot.initiate_model()
-robot.init_camera("./img")
+robot.init_camera(dir)
 
 #open file for writing
-data = open("object_recog.csv", "w")
+data = open("object_recog_2.csv", "w")
 
 if data == None:
     print('Error opening data file!\n')
