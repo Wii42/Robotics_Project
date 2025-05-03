@@ -1,14 +1,16 @@
 import math
+import sys
 
 from unifr_api_epuck import wrapper
+from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck
+
 from beacon_detector import BeaconDetector
 from beacon import Beacon
+from project2 import coordinator
 from project2.odometry import Odometry
 from project2.step_counter import StepCounter
 from track_follower import TrackFollower
 import queue
-
-MY_IP: str = '192.168.2.211'
 
 NORM_SPEED: float = 1
 GREY_MIN_LENGTH: float = 10 / NORM_SPEED  # how long the robot should be in the grey area
@@ -21,18 +23,19 @@ GREY_MIN: int = 450  # to determine if the sensor is on the grey area
 beacons: dict[int, Beacon] = {1: Beacon("beacon1", 450, 540, math.pi),
                               2: Beacon("beacon2", 500, 60, 0),
                               }
-def send_pos(state_queue: queue.Queue, robot_position: list[float]):
-    if state_queue is not None:
-        state_queue.put({"robot_position": robot_position.copy()})
+def send_pos(robot: WifiEpuck, robot_position: list[float]):
+        robot.ClientCommunication.send_msg_to(coordinator.COORDINATOR_ID, {"robot_position": robot_position.copy()})
 
-def main(state_queue: queue.Queue = None):
-    robot = wrapper.get_robot(MY_IP)
+def main(robot_ip: str):
+
+    robot = wrapper.get_robot(robot_ip)
     robot.init_ground()
+    robot.init_client_communication()
 
     step_counter: StepCounter = StepCounter()
 
     detector: BeaconDetector = BeaconDetector(NORM_SPEED, GREY_MIN_LENGTH,
-                                              GREY_DISTANCE_MAX, GREY_MIN, LINE_MAX, beacons)
+                                              GREY_DISTANCE_MAX, GREY_MIN, LINE_MAX, beacons, step_counter)
     track_follower: TrackFollower = TrackFollower(robot, NORM_SPEED, LINE_MAX)
 
     odometry: Odometry = Odometry(robot, step_counter)
@@ -42,7 +45,7 @@ def main(state_queue: queue.Queue = None):
         gs: list[int] = robot.get_ground()
 
         odometry.odometry(track_follower.current_speed[0], track_follower.current_speed[1])
-        send_pos(state_queue, [odometry.x, odometry.y])
+        send_pos(robot, [odometry.x, odometry.y])
 
         detector.receive_ground(gs)
 
@@ -54,7 +57,7 @@ def main(state_queue: queue.Queue = None):
         if detector.new_beacon_found():
             print(f"found beacon: {detector.last_beacon.name}")
             robot_position = [detector.last_beacon.x, detector.last_beacon.y]
-            send_pos(state_queue, robot_position)
+            send_pos(robot, robot_position)
             odometry.x = robot_position[0]
             odometry.y = robot_position[1]
             odometry.theta = detector.last_beacon.orientation
@@ -70,4 +73,8 @@ def main(state_queue: queue.Queue = None):
 
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) == 2:
+        ip = sys.argv[1]
+    else:
+        ip = '192.168.2.211'
+    main(ip)

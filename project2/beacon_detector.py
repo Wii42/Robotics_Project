@@ -3,6 +3,12 @@ from enum import Enum
 from beacon import Beacon
 from project2.step_counter import StepCounter
 
+class DetectorState(Enum):
+    IDLE = 0
+    ON_GREY = 1
+    BETWEEN_GREY = 2
+    COMPLETE = 3
+
 class BeaconDetector:
 
     def __init__(self, robot_norm_speed: float, grey_min_length: float, grey_distance_max: float, grey_min_value: int,
