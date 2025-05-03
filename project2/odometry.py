@@ -3,6 +3,8 @@ import math
 from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck
 from time import perf_counter_ns
 
+from project2.step_counter import StepCounter
+
 
 def wheel_distance(angular_speed: float, wheel_radius: float, time_delta: float) -> float:
     """
@@ -18,7 +20,7 @@ theta_correction_factor: float = 0.782608696 # correction factor for the theta a
 # collected with robot 207, 211 does not need correction
 
 class Odometry:
-    def __init__(self, robot: WifiEpuck):
+    def __init__(self, robot: WifiEpuck, step_counter: StepCounter):
         self.robot: WifiEpuck = robot
         self.theta: float = 0  # orientation in radians
         self.x: float = 0 # in m
@@ -26,6 +28,7 @@ class Odometry:
         self.last_time_ns: float = 0
         self.distance_left: float = 0
         self.distance_right: float = 0
+        self.step_counter: StepCounter = step_counter
 
     def odometry(self, speed_left: float, speed_right: float):
         wheel_diameter: float = 0.041  # in m, source https://www.gctronic.com/doc/index.php/e-puck2
@@ -61,3 +64,12 @@ class Odometry:
         # Print the current position and orientation
         print(
             f"Current Position: ({self.x:.2f}, {self.y:.2f}), Orientation: {math.degrees(self.theta):.2f} degrees, distance: {self.total_distance():.2f} m")
+
+
+class OdometryReading:
+    def __init__(self, step:int, x: float, y: float, theta: float, timestamp: int):
+        self.step: int = step
+        self.x: float = x
+        self.y: float = y
+        self.theta: float = theta
+        self.timestamp: float = timestamp

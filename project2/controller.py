@@ -4,6 +4,7 @@ from unifr_api_epuck import wrapper
 from beacon_detector import BeaconDetector
 from beacon import Beacon
 from project2.odometry import Odometry
+from project2.step_counter import StepCounter
 from track_follower import TrackFollower
 import queue
 
@@ -24,21 +25,17 @@ def send_pos(state_queue: queue.Queue, robot_position: list[float]):
     if state_queue is not None:
         state_queue.put({"robot_position": robot_position.copy()})
 
-def mock_move(robot_position: list[float]):
-    robot_position[0] += 1
-    robot_position[1] += 0.5
-
 def main(state_queue: queue.Queue = None):
     robot = wrapper.get_robot(MY_IP)
     robot.init_ground()
+
+    step_counter: StepCounter = StepCounter()
 
     detector: BeaconDetector = BeaconDetector(NORM_SPEED, GREY_MIN_LENGTH,
                                               GREY_DISTANCE_MAX, GREY_MIN, LINE_MAX, beacons)
     track_follower: TrackFollower = TrackFollower(robot, NORM_SPEED, LINE_MAX)
 
-    odometry: Odometry = Odometry(robot)
-
-    robot_position: list[float] = [50, 50]
+    odometry: Odometry = Odometry(robot, step_counter)
 
     while robot.go_on():
         robot.go_on()
@@ -66,6 +63,8 @@ def main(state_queue: queue.Queue = None):
 
         if not track_follower.follow_track():
             break
+
+        step_counter.step()
 
     robot.clean_up()
 
