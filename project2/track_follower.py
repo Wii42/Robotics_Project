@@ -3,6 +3,7 @@ class TrackFollower:
     def __init__(self, robot, norm_speed: float, line_max_value: int):
         self.robot = robot
         self.norm_speed = norm_speed
+        self.current_speed = [0, 0]
 
         self.line_max_value = line_max_value
 
@@ -43,6 +44,9 @@ class TrackFollower:
 
         r = self.binary_approach(gs)
         if r is not None:
-            self.robot.set_speed(r[0] * self.norm_speed, r[1] * self.norm_speed)
+            speed_left = r[0] * self.norm_speed
+            speed_right = r[1] * self.norm_speed
+            self.robot.set_speed(speed_left, speed_right)
+            self.current_speed = [speed_left, speed_right]
 
         return r is not None
