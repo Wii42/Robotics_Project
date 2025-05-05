@@ -7,14 +7,11 @@ from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck
 from beacon_detector import BeaconDetector
 from beacon import Beacon
 from project2 import coordinator
+from project2.grey_area import GreyArea
 from project2.odometry import Odometry
 from project2.step_counter import StepCounter
 from track_follower import TrackFollower
 import queue
-
-NORM_SPEED: float = 1
-GREY_MIN_LENGTH: float = 10 / NORM_SPEED  # how long the robot should be in the grey area
-GREY_DISTANCE_MAX: float = 2 * GREY_MIN_LENGTH  # how far apart the grey areas can be for it to count as one beacon
 
 LINE_MAX: int = 750  # to determine if the sensor is on the line
 
@@ -24,9 +21,10 @@ beacons: dict[int, Beacon] = {1: Beacon("beacon1", 450, 540, math.pi),
                               2: Beacon("beacon2", 500, 60, 0),
                               }
 def send_pos(robot: WifiEpuck, robot_position: list[float]):
-        robot.ClientCommunication.send_msg_to(coordinator.COORDINATOR_ID, {"robot_position": robot_position.copy()})
+        robot.ClientCommunication.send_msg_to(coordinator.COORDINATOR_ID, {"robot_id": robot.id.split("_")[-1], "robot_position": robot_position.copy()})
 
-def main(robot_ip: str):
+def main(robot_ip: str, norm_speed: float = 1):
+
 
     robot = wrapper.get_robot(robot_ip)
     robot.init_ground()
@@ -34,9 +32,10 @@ def main(robot_ip: str):
 
     step_counter: StepCounter = StepCounter()
 
-    detector: BeaconDetector = BeaconDetector(NORM_SPEED, GREY_MIN_LENGTH,
-                                              GREY_DISTANCE_MAX, GREY_MIN, LINE_MAX, beacons, step_counter)
-    track_follower: TrackFollower = TrackFollower(robot, NORM_SPEED, LINE_MAX)
+    grey_area: GreyArea = GreyArea(norm_speed)
+
+    detector: BeaconDetector = BeaconDetector(norm_speed, grey_area, GREY_MIN, LINE_MAX, beacons, step_counter)
+    track_follower: TrackFollower = TrackFollower(robot, norm_speed, LINE_MAX)
 
     odometry: Odometry = Odometry(robot, step_counter)
 
@@ -76,5 +75,5 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         ip = sys.argv[1]
     else:
-        ip = '192.168.2.211'
+        ip = '192.168.2.207'
     main(ip)

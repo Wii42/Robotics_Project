@@ -20,7 +20,7 @@ def main(state_queue: queue.Queue, beacons: list[Beacon]):
 
     # Hauptschleife für pygame
     running = True
-    robot_position = [50, 50]  # Initiale Position
+    robot_position:  dict[str, list[int]] = {}  # Initiale Position
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -37,10 +37,14 @@ def main(state_queue: queue.Queue, beacons: list[Beacon]):
         # Aktualisiere Roboterposition aus der Queue
         while not state_queue.empty():
             state = state_queue.get()
-            robot_position = state.get("robot_position", robot_position)
+            robot_id = state.get("robot_id")
+            position = state.get("robot_position", robot_position)
+            robot_position[robot_id] = position
 
         # Roboter zeichnen
-        pygame.draw.circle(screen, BLUE, (int(robot_position[0]), int(robot_position[1])), 10)
+        for robot_id in robot_position:
+            robot = robot_position[robot_id]
+            pygame.draw.circle(screen, BLUE, (int(robot[0]), int(robot[1])), 10)
 
         # Anzeige aktualisieren
         pygame.display.flip()

@@ -15,7 +15,7 @@ def wheel_distance(angular_speed: float, wheel_radius: float, time_delta: float)
     """
     return angular_speed * wheel_radius * time_delta
 
-theta_correction_factor: float = 0.782608696 # correction factor for the theta angle
+theta_correction_factor: dict[str, float] = {"207": 0.782608696} # correction factor for the theta angle
 # expected angle 90, receceived 115, so 90/115 = 0.782608696
 # collected with robot 207, 211 does not need correction
 
@@ -43,9 +43,8 @@ class Odometry:
         distance_right: float = wheel_distance(speed_right, wheel_radius, time_delta/ 1e9)
 
         distance: float = (distance_right + distance_left) / 2
-
-        delta_theta: float = ((distance_left - distance_right) / distance_between_wheels)
-
+        # calculate the change in position
+        delta_theta: float = ((distance_left - distance_right) / distance_between_wheels) * self.theta_correction()
         delta_x: float = distance*math.cos(self.theta + (delta_theta/2))
         delta_y: float = distance*math.sin(self.theta + (delta_theta/2))
 
@@ -55,6 +54,10 @@ class Odometry:
 
         self.distance_left += distance_left
         self.distance_right += distance_right
+
+    def theta_correction(self) -> float:
+        robot_name = self.robot.id.split("_")[-1]
+        return theta_correction_factor.get(robot_name, 1)
 
     def total_distance(self) -> float:
         return (self.distance_right + self.distance_left) / 2

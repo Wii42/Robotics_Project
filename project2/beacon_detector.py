@@ -1,6 +1,7 @@
 from enum import Enum
 
 from beacon import Beacon
+from project2.grey_area import GreyArea
 from project2.step_counter import StepCounter
 
 class DetectorState(Enum):
@@ -11,7 +12,7 @@ class DetectorState(Enum):
 
 class BeaconDetector:
 
-    def __init__(self, robot_norm_speed: float, grey_min_length: float, grey_distance_max: float, grey_min_value: int,
+    def __init__(self, robot_norm_speed: float, grey_area: GreyArea, grey_min_value: int,
                  grey_max_value: int, beacons: dict[int, Beacon], step_counter: StepCounter):
         self.grey_length: int = 0
         self.grey_distance: int = 0
@@ -22,8 +23,7 @@ class BeaconDetector:
         self.last_beacon_end: int | None = None # last step when the grey area ended
 
         self.robot_norm_speed: float = robot_norm_speed
-        self.grey_min_length: float = grey_min_length
-        self.grey_distance_max: float = grey_distance_max
+        self.grey_area: GreyArea = grey_area
         self.grey_min_value: int = grey_min_value
         self.grey_max_value: int = grey_max_value
         self.beacons: dict[int, Beacon] = beacons
@@ -44,7 +44,7 @@ class BeaconDetector:
         self.check_for_beacon_detection()
 
     def check_for_beacon_detection(self):
-        if self.grey_distance >= self.grey_distance_max:
+        if self.grey_distance >= self.grey_area.grey_distance_max():
             # print(f"grey areas: {self.grey_area_count}")
             detected_beacon: Beacon = self.beacons.get(self.grey_area_count)
             if detected_beacon is not None:
@@ -54,7 +54,7 @@ class BeaconDetector:
 
     def handle_off_grey(self):
         if self.grey_length > 0:
-            if self.grey_length >= self.grey_min_length:
+            if self.grey_length >= self.grey_area.grey_min_length():
                 print(f"grey length: {self.grey_length}")
                 self.grey_area_count += 1
             self.grey_length = 0
