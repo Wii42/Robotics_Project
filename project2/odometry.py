@@ -3,6 +3,7 @@ import math
 from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck
 from time import perf_counter_ns
 
+from project2.beacon import Beacon
 from project2.step_counter import StepCounter
 
 
@@ -29,6 +30,8 @@ class Odometry:
         self.distance_left: float = 0
         self.distance_right: float = 0
         self.step_counter: StepCounter = step_counter
+        self.position_on_track = None
+        self.calibrated_by_beacon: bool = False
 
     def odometry(self, speed_left: float, speed_right: float):
         wheel_diameter: float = 0.041  # in m, source https://www.gctronic.com/doc/index.php/e-puck2
@@ -55,9 +58,16 @@ class Odometry:
         self.distance_left += distance_left
         self.distance_right += distance_right
 
+        if self.calibrated_by_beacon:
+            self.position_on_track+= distance
+
+
     def theta_correction(self) -> float:
-        robot_name = self.robot.id.split("_")[-1]
+        robot_name = self.robot_name()
         return theta_correction_factor.get(robot_name, 1)
+
+    def robot_name(self):
+        return self.robot.id.split("_")[-1]
 
     def total_distance(self) -> float:
         return (self.distance_right + self.distance_left) / 2
@@ -66,7 +76,15 @@ class Odometry:
     def print_position(self):
         # Print the current position and orientation
         print(
-            f"Current Position: ({self.x:.2f}, {self.y:.2f}), Orientation: {math.degrees(self.theta):.2f} degrees, distance: {self.total_distance():.2f} m")
+            f"[{self.robot_name()}] Current Position: ({self.x:.2f}, {self.y:.2f}), Orientation: {math.degrees(self.theta):.2f} degrees, distance: {self.total_distance():.2f} m")
+
+    def sync_with_beacon(self, beacon: Beacon):
+        self.x = beacon.x
+        self.y = beacon.y
+        self.theta = beacon.orientation
+        self.calibrated_by_beacon = True
+        if self.position_on_track is None :
+            self.position_on_track = beacon.position_on_track
 
 
 class OdometryReading:

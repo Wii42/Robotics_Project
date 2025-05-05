@@ -7,6 +7,7 @@ from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck
 from beacon_detector import BeaconDetector
 from beacon import Beacon
 from project2 import coordinator
+from project2.coordinator import beacons
 from project2.grey_area import GreyArea
 from project2.odometry import Odometry
 from project2.step_counter import StepCounter
@@ -17,11 +18,8 @@ LINE_MAX: int = 750  # to determine if the sensor is on the line
 
 GREY_MIN: int = 450  # to determine if the sensor is on the grey area
 
-beacons: dict[int, Beacon] = {1: Beacon("beacon1", 450, 540, math.pi),
-                              2: Beacon("beacon2", 500, 60, 0),
-                              }
-def send_pos(robot: WifiEpuck, robot_position: list[float]):
-        robot.ClientCommunication.send_msg_to(coordinator.COORDINATOR_ID, {"robot_id": robot.id.split("_")[-1], "robot_position": robot_position.copy()})
+def send_pos(robot: WifiEpuck, robot_position: list[float], position_on_track: float):
+        robot.ClientCommunication.send_msg_to(coordinator.COORDINATOR_ID, {"robot_id": robot.id.split("_")[-1], "robot_position": robot_position.copy(), "position_on_track": position_on_track})
 
 def main(robot_ip: str, norm_speed: float = 1):
 
@@ -44,22 +42,18 @@ def main(robot_ip: str, norm_speed: float = 1):
         gs: list[int] = robot.get_ground()
 
         odometry.odometry(track_follower.current_speed[0], track_follower.current_speed[1])
-        send_pos(robot, [odometry.x, odometry.y])
+
 
         detector.receive_ground(gs)
 
         odometry.print_position()
 
-        #print(track_follower.current_speed)
-
 
         if detector.new_beacon_found():
-            print(f"found beacon: {detector.last_beacon.name}")
-            robot_position = [detector.last_beacon.x, detector.last_beacon.y]
-            send_pos(robot, robot_position)
-            odometry.x = robot_position[0]
-            odometry.y = robot_position[1]
-            odometry.theta = detector.last_beacon.orientation
+            print(f"[{robot.id.split('_')[-1]}] found beacon: {detector.last_beacon.name}")
+            odometry.sync_with_beacon(detector.last_beacon)
+
+        send_pos(robot, [odometry.x, odometry.y], odometry.position_on_track)
 
 
 
