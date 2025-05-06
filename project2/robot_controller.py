@@ -57,7 +57,7 @@ def main(robot_ip: str, norm_speed: float = 1):
 
 
 
-        if not track_follower.follow_track():
+        if not track_follower.follow_track(gs):
             break
 
         step_counter.step()
