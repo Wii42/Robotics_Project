@@ -1,36 +1,54 @@
 from unifr_api_epuck import wrapper
 
+from project2.step_counter import StepCounter
 from project2.track_follower import TrackFollower
-from task_2.determine_side import DetermineSide, TrackSide
+from task_2.determine_side import DetermineSide
 from task_2.ground_sensor_memory import GroundSensorMemory
+from task_2.line_alignment import LineAlignment
 
-MY_IP = '192.168.2.216'
-LINE_MAX_VALUE: int = 575
+MY_IP = '192.168.2.202'
+LINE_MAX_VALUE: int = 500
+
+STEPS_TO_DETERMINE_SIDE: int = 20
+
 
 def main():
     robot = wrapper.get_robot(MY_IP)
 
     robot.init_ground()
 
-    line_follower = TrackFollower(robot, 3, LINE_MAX_VALUE)
+    counter: StepCounter = StepCounter()
 
-    sensor_memory: GroundSensorMemory = GroundSensorMemory(2)
+    line_follower: TrackFollower = TrackFollower(robot, 3, LINE_MAX_VALUE)
 
-    determine_side: DetermineSide = DetermineSide(750, LINE_MAX_VALUE)
+    sensor_memory: GroundSensorMemory = GroundSensorMemory(3)
 
-    invert_sides: bool = True
+    determine_side: DetermineSide = DetermineSide(750, LINE_MAX_VALUE, STEPS_TO_DETERMINE_SIDE)
+
+    line_alignment: LineAlignment = LineAlignment()
+
+    check_side_necessary: bool = True
 
     while robot.go_on():
+        if counter.get_steps() > STEPS_TO_DETERMINE_SIDE and check_side_necessary:
+            line_alignment.check_line_alignment(determine_side.get_probable_side())
+            check_side_necessary = False
+
+        print(counter.get_steps())
+        counter.step()
+
         gs: list[int] = robot.get_ground()
         sensor_memory.update_memory(gs)
-        #print(gs)
         # print(gs)
-        #robot.set_speed(5,5)
-        if not line_follower.follow_track(sensor_memory.get_average(), use_two_sensors_approach=True, invert_side=invert_sides):
+        # print(gs)
+        # robot.set_speed(5,5)
+        if not line_follower.follow_track(sensor_memory.get_average(), use_two_sensors_approach=True,
+                                          invert_side=line_alignment.get_follow_left_side()):
             break
         print(line_follower.position)
-        determine_side.det_side(sensor_memory.get_average(), line_follower.position, invert_side= invert_sides)
-        print(determine_side.get_probable_side(5))
+        determine_side.determine_side(sensor_memory.get_average(), line_follower.position,
+                                      invert_side=line_alignment.get_follow_left_side())
+        print(determine_side.get_probable_side())
         print()
 
     robot.clean_up()
