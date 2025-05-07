@@ -28,7 +28,6 @@ class DetermineSide:
         return value > self.grey_max_value
 
     def __determine_side(self, gs: list[int], position: RobotPosition):
-        print(self.read_colors(gs))
         if position == RobotPosition.IS_LEFT:
             if self.in_white(gs[0]):
                 return TrackSide.LEFT
@@ -75,7 +74,7 @@ class DetermineSide:
         else:
 
             values = self.readings[-self.steps_to_determine_side:] if self.steps_to_determine_side < len(self.readings) else self.readings
-        print(values)
+        #print(values)
         left = values.count(TrackSide.LEFT)
         right = values.count(TrackSide.RIGHT)
 

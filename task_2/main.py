@@ -34,8 +34,6 @@ def main():
             line_alignment.check_line_alignment(determine_side.get_probable_side())
             check_side_necessary = False
 
-        print(counter.get_steps())
-        counter.step()
 
         gs: list[int] = robot.get_ground()
         sensor_memory.update_memory(gs)
@@ -45,11 +43,12 @@ def main():
         if not line_follower.follow_track(sensor_memory.get_average(), use_two_sensors_approach=True,
                                           invert_side=line_alignment.get_follow_left_side()):
             break
-        print(line_follower.position)
         determine_side.determine_side(sensor_memory.get_average(), line_follower.position,
                                       invert_side=line_alignment.get_follow_left_side())
         print(determine_side.get_probable_side())
         print()
+
+        counter.step()
 
     robot.clean_up()
 
