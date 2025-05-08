@@ -10,6 +10,7 @@ from project2 import coordinator
 from project2.coordinator import beacons
 from project2.grey_area import GreyArea
 from project2.odometry import Odometry
+from project2.position_on_track import PositionOnTrack
 from project2.step_counter import StepCounter
 from track_follower import TrackFollower
 import queue
@@ -18,12 +19,10 @@ LINE_MAX: int = 750  # to determine if the sensor is on the line
 
 GREY_MIN: int = 450  # to determine if the sensor is on the grey area
 
-def send_pos(robot: WifiEpuck, robot_position: list[float], position_on_track: float):
-        robot.ClientCommunication.send_msg_to(coordinator.COORDINATOR_ID, {"robot_id": robot.id.split("_")[-1], "robot_position": robot_position.copy(), "position_on_track": position_on_track})
+def send_pos(robot: WifiEpuck, robot_position: list[float], position_on_track: PositionOnTrack):
+        robot.ClientCommunication.send_msg_to(coordinator.COORDINATOR_ID, {"robot_id": robot.id.split("_")[-1], "robot_position": robot_position.copy(), "position_on_track": position_on_track.to_dict()})
 
 def main(robot_ip: str, norm_speed: float = 1):
-
-
     robot = wrapper.get_robot(robot_ip)
     robot.init_ground()
     robot.init_client_communication()
@@ -53,7 +52,7 @@ def main(robot_ip: str, norm_speed: float = 1):
             print(f"[{robot.id.split('_')[-1]}] found beacon: {detector.last_beacon.name}")
             odometry.sync_with_beacon(detector.last_beacon)
 
-        send_pos(robot, [odometry.x, odometry.y], odometry.position_on_track)
+        send_pos(robot, [odometry.x, odometry.y], odometry.position_from_beacon)
 
 
 

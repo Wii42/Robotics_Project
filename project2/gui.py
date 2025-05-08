@@ -1,5 +1,8 @@
 import pygame
 import queue
+
+from pygments.styles.solarized import DARK_COLORS
+
 from beacon import Beacon
 
 def main(state_queue: queue.Queue, beacons: list[Beacon]):
@@ -9,6 +12,11 @@ def main(state_queue: queue.Queue, beacons: list[Beacon]):
     WHITE = (255, 255, 255)
     RED = (255, 0, 0)
     BLUE = (0, 0, 255)
+    GREEN = (0, 255, 0)
+    BLACK = (0, 0, 0)
+    DARK_GREEN = (0, 100, 0)
+
+    ROBOT_COLORS = [BLUE, GREEN, DARK_GREEN]
 
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Track Visualisierung")
@@ -42,9 +50,9 @@ def main(state_queue: queue.Queue, beacons: list[Beacon]):
             robot_position[robot_id] = position
 
         # Roboter zeichnen
-        for robot_id in robot_position:
+        for i, robot_id in enumerate(robot_position):
             robot = robot_position[robot_id]
-            pygame.draw.circle(screen, BLUE, (int(robot[0]), int(robot[1])), 10)
+            pygame.draw.circle(screen, ROBOT_COLORS[i], (int(robot[0]), int(robot[1])), 10)
 
         # Anzeige aktualisieren
         pygame.display.flip()

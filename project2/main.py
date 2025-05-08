@@ -5,7 +5,7 @@ import gui
 import robot_controller
 from project2 import coordinator
 
-ROBOTS: list[str] = ['192.168.2.207', '192.168.2.211']
+ROBOTS: list[str] = ['192.168.2.202', '192.168.2.212']
 
 if __name__ == "__main__":
     state_queue = queue.Queue()

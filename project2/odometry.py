@@ -4,6 +4,7 @@ from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck
 from time import perf_counter_ns
 
 from project2.beacon import Beacon
+from project2.position_on_track import PositionOnTrack
 from project2.step_counter import StepCounter
 
 
@@ -30,7 +31,7 @@ class Odometry:
         self.distance_left: float = 0
         self.distance_right: float = 0
         self.step_counter: StepCounter = step_counter
-        self.position_on_track = None
+        self.position_from_beacon: PositionOnTrack = PositionOnTrack(0)
         self.calibrated_by_beacon: bool = False
 
     def odometry(self, speed_left: float, speed_right: float):
@@ -59,7 +60,7 @@ class Odometry:
         self.distance_right += distance_right
 
         if self.calibrated_by_beacon:
-            self.position_on_track+= distance
+            self.position_from_beacon.distance += distance
 
 
     def theta_correction(self) -> float:
@@ -83,8 +84,8 @@ class Odometry:
         self.y = beacon.y
         self.theta = beacon.orientation
         self.calibrated_by_beacon = True
-        if self.position_on_track is None :
-            self.position_on_track = beacon.position_on_track
+        self.position_from_beacon.from_beacon = beacon
+        self.position_from_beacon.distance = 0
 
 
 class OdometryReading:
