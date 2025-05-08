@@ -12,7 +12,7 @@ class SpeedAdjustor:
             return 1.0
 
         x = distance_to_next_robot - self.optimal_distance
-        m = 2 / self.optimal_distance
+        m = 1 / self.optimal_distance * 0.3
         speed_factor = m * x + 1.0
 
 

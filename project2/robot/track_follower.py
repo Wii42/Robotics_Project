@@ -16,6 +16,7 @@ class TrackFollower:
         self.current_speed = [0, 0]
         self.position: RobotPosition = RobotPosition.UNKNOWN
         self.speed_factor: float = 1.0
+        self.obstacle_speed_factor: float = 1
 
         self.line_max_value = line_max_value # the max brightness value for the line
 
@@ -56,7 +57,7 @@ class TrackFollower:
                 return 2, 2
             case _:  # else
                 self.position = RobotPosition.ERROR
-                print("ERROR")
+                print(f"ERROR: black_list = {black_list}")
                 return None
 
     def two_sensors_approach(self, gs: list[int]) -> tuple[float, float] | None:
@@ -111,8 +112,10 @@ class TrackFollower:
         if r is not None:
             if invert_side:
                 r = r[::-1] # swap left and right
-            speed_left = r[0] * self.norm_speed* self.speed_factor
-            speed_right = r[1] * self.norm_speed* self.speed_factor
+            speed_factor = min(self.speed_factor, self.obstacle_speed_factor)
+            base_speed = self.norm_speed * speed_factor
+            speed_left = r[0] * base_speed
+            speed_right = r[1] * base_speed
             self.robot.set_speed(speed_left, speed_right)
             self.current_speed = [speed_left, speed_right]
 

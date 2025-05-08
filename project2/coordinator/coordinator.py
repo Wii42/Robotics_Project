@@ -25,7 +25,7 @@ COORDINATOR_ID: str = 'coordinator'
 def main(robots: list[str], state_queue: queue.Queue = None):
     client: SocketClientCommunication = wrapper.get_client(client_id=COORDINATOR_ID, host_ip='http://127.0.0.1:8000')
 
-    speed_adjustor: SpeedAdjustor = SpeedAdjustor(client, 0.2)
+    speed_adjustor: SpeedAdjustor = SpeedAdjustor(client, 0.5)
 
     for robot in robots:
         subprocess.Popen(['python3', 'robot/robot_controller.py', robot], shell=False,
