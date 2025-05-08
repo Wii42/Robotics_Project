@@ -3,9 +3,9 @@ import math
 from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck
 from time import perf_counter_ns
 
-from project2.beacon import Beacon
-from project2.position_on_track import PositionOnTrack
-from project2.step_counter import StepCounter
+from project2.core.beacon import Beacon
+from project2.core.position_on_track import PositionOnTrack
+from project2.robot.step_counter import StepCounter
 
 
 def wheel_distance(angular_speed: float, wheel_radius: float, time_delta: float) -> float:

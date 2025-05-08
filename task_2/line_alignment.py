@@ -1,4 +1,3 @@
-from project2.step_counter import StepCounter
 from task_2.determine_side import TrackSide
 
 

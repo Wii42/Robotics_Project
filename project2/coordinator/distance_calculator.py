@@ -1,5 +1,4 @@
-from project2.beacon import Beacon
-from project2.position_on_track import PositionOnTrack
+from project2.core.position_on_track import PositionOnTrack
 
 
 def compute_distance(rear_robot: PositionOnTrack, front_robot: PositionOnTrack) -> float | None:

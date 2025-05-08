@@ -1,7 +1,7 @@
 from unifr_api_epuck import wrapper
 
-from project2.step_counter import StepCounter
-from project2.track_follower import TrackFollower
+from project2.robot.step_counter import StepCounter
+from project2.robot.track_follower import TrackFollower
 from task_2.determine_side import DetermineSide
 from task_2.ground_sensor_memory import GroundSensorMemory
 from task_2.line_alignment import LineAlignment

@@ -1,8 +1,8 @@
 from enum import Enum
 
-from beacon import Beacon
-from project2.grey_area import GreyArea
-from project2.step_counter import StepCounter
+from project2.core.beacon import Beacon
+from project2.robot.grey_area import GreyArea
+from project2.robot.step_counter import StepCounter
 
 class DetectorState(Enum):
     IDLE = 0

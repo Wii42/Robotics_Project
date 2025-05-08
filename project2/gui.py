@@ -1,9 +1,7 @@
 import pygame
 import queue
 
-from pygments.styles.solarized import DARK_COLORS
-
-from beacon import Beacon
+from project2.core.beacon import Beacon
 
 def main(state_queue: queue.Queue, beacons: list[Beacon]):
     # Pygame-Setup

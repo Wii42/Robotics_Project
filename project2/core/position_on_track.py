@@ -1,4 +1,4 @@
-from project2.beacon import Beacon
+from project2.core.beacon import Beacon
 
 
 

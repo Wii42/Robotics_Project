@@ -1,18 +1,16 @@
 import math
 import subprocess
 import sys
-import csv
 
 from unifr_api_epuck import wrapper
 from unifr_api_epuck.communication.socket_client_communication import SocketClientCommunication
 
-from beacon_detector import BeaconDetector
-from beacon import Beacon
+from project2.core.beacon import Beacon
 import queue
 
-from project2.distance_calculator import compute_distance
-from project2.position_on_track import PositionOnTrack, position_from_dict
-from project2.speed_adjustor import SpeedAdjustor
+from project2.coordinator.distance_calculator import compute_distance
+from project2.core.position_on_track import PositionOnTrack, position_from_dict
+from project2.coordinator.speed_adjustor import SpeedAdjustor
 
 BEACONS: dict[int, Beacon] = {1: Beacon("beacon1", 450, 540, math.pi),
                               2: Beacon("beacon2", 500, 60, 0),
@@ -30,7 +28,7 @@ def main(robots: list[str], state_queue: queue.Queue = None):
     speed_adjustor: SpeedAdjustor = SpeedAdjustor(client, 0.2)
 
     for robot in robots:
-        subprocess.Popen(['python3', 'robot_controller.py', robot], shell=False,
+        subprocess.Popen(['python3', 'robot/robot_controller.py', robot], shell=False,
                          # stdout=sys.stdout,
                          stderr=sys.stdout)
 

@@ -1,19 +1,15 @@
-import math
 import sys
 
 from unifr_api_epuck import wrapper
 from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck
 
-from beacon_detector import BeaconDetector
-from beacon import Beacon
-from project2 import coordinator
-from project2.coordinator import BEACONS
-from project2.grey_area import GreyArea
-from project2.odometry import Odometry
-from project2.position_on_track import PositionOnTrack
-from project2.step_counter import StepCounter
-from track_follower import TrackFollower
-import queue
+from project2.robot.beacon_detector import BeaconDetector
+from project2.coordinator import coordinator
+from project2.robot.grey_area import GreyArea
+from project2.robot.odometry import Odometry
+from project2.core.position_on_track import PositionOnTrack
+from project2.robot.step_counter import StepCounter
+from project2.robot.track_follower import TrackFollower
 
 LINE_MAX: int = 750  # to determine if the sensor is on the line
 
@@ -31,7 +27,7 @@ def main(robot_ip: str, norm_speed: float = 1):
 
     grey_area: GreyArea = GreyArea(norm_speed)
 
-    detector: BeaconDetector = BeaconDetector(norm_speed, grey_area, GREY_MIN, LINE_MAX, BEACONS, step_counter)
+    detector: BeaconDetector = BeaconDetector(norm_speed, grey_area, GREY_MIN, LINE_MAX, coordinator.BEACONS, step_counter)
     track_follower: TrackFollower = TrackFollower(robot, norm_speed, LINE_MAX)
 
     odometry: Odometry = Odometry(robot, step_counter)
