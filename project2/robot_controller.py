@@ -20,7 +20,7 @@ LINE_MAX: int = 750  # to determine if the sensor is on the line
 GREY_MIN: int = 450  # to determine if the sensor is on the grey area
 
 def send_pos(robot: WifiEpuck, robot_position: list[float], position_on_track: PositionOnTrack):
-        robot.ClientCommunication.send_msg_to(coordinator.COORDINATOR_ID, {"robot_id": robot.id.split("_")[-1], "robot_position": robot_position.copy(), "position_on_track": position_on_track.to_dict()})
+        robot.ClientCommunication.send_msg_to(coordinator.COORDINATOR_ID, {"robot_id": robot.id, "robot_position": robot_position.copy(), "position_on_track": position_on_track.to_dict()})
 
 def main(robot_ip: str, norm_speed: float = 1):
     robot = wrapper.get_robot(robot_ip)
@@ -40,6 +40,12 @@ def main(robot_ip: str, norm_speed: float = 1):
         robot.go_on()
         gs: list[int] = robot.get_ground()
 
+        while robot.has_receive_msg():
+            msg = robot.receive_msg()
+            if msg.get("speed_factor"):
+                speed_factor = msg.get("speed_factor")
+                print(f"[{robot.id.split('_')[-1]}] received speed factor: {speed_factor}")
+                track_follower.speed_factor = speed_factor
         odometry.odometry(track_follower.current_speed[0], track_follower.current_speed[1])
 
 

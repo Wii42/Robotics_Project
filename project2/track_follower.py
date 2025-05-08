@@ -15,6 +15,7 @@ class TrackFollower:
         self.norm_speed = norm_speed
         self.current_speed = [0, 0]
         self.position: RobotPosition = RobotPosition.UNKNOWN
+        self.speed_factor: float = 1.0
 
         self.line_max_value = line_max_value # the max brightness value for the line
 
@@ -110,8 +111,8 @@ class TrackFollower:
         if r is not None:
             if invert_side:
                 r = r[::-1] # swap left and right
-            speed_left = r[0] * self.norm_speed
-            speed_right = r[1] * self.norm_speed
+            speed_left = r[0] * self.norm_speed* self.speed_factor
+            speed_right = r[1] * self.norm_speed* self.speed_factor
             self.robot.set_speed(speed_left, speed_right)
             self.current_speed = [speed_left, speed_right]
 
