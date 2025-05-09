@@ -1,4 +1,4 @@
-import sys
+import sys, signal
 
 from unifr_api_epuck import wrapper
 from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck
@@ -6,7 +6,7 @@ from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck
 from project2.robot.beacon_detector import BeaconDetector
 from project2.coordinator import coordinator
 from project2.robot.grey_area import GreyArea
-from project2.robot.obstacle_detector import ObstacleDetector
+from project2.robot.obstacle_avoider import ObstacleAvoider
 from project2.robot.odometry import Odometry
 from project2.core.position_on_track import PositionOnTrack
 from project2.robot.step_counter import StepCounter
@@ -25,6 +25,12 @@ def send_pos(robot: WifiEpuck, robot_position: list[float], position_on_track: P
 
 def main(robot_ip: str, norm_speed: float = 1):
     robot = wrapper.get_robot(robot_ip)
+
+    def handler(signum, frame):
+        robot.clean_up()
+
+    signal.signal(signal.SIGINT, handler)
+
     robot.init_ground()
     robot.calibrate_prox()
     robot.init_client_communication()
@@ -33,7 +39,7 @@ def main(robot_ip: str, norm_speed: float = 1):
 
     grey_area: GreyArea = GreyArea(norm_speed)
 
-    obstacle_detector: ObstacleDetector = ObstacleDetector(50)
+    obstacle_avoider: ObstacleAvoider = ObstacleAvoider(100, 40)
 
     detector: BeaconDetector = BeaconDetector(norm_speed, grey_area, GREY_MIN, LINE_MAX, coordinator.BEACONS,
                                               step_counter)
@@ -55,19 +61,18 @@ def main(robot_ip: str, norm_speed: float = 1):
 
         detector.receive_ground(gs)
 
-        odometry.print_position()
+        # odometry.print_position()
 
         if detector.new_beacon_found():
             print(f"[{robot.id.split('_')[-1]}] found beacon: {detector.last_beacon.name}")
             odometry.sync_with_beacon(detector.last_beacon)
 
-        send_pos(robot, [odometry.x, odometry.y], odometry.position_from_beacon)
+        if step_counter.get_steps() % 10 == 0:
+            send_pos(robot, [odometry.x, odometry.y], odometry.position_from_beacon)
 
-        if obstacle_detector.is_obstacle(robot.get_calibrate_prox()):
-            print(f"[{robot.id.split('_')[-1]}] obstacle detected")
-            track_follower.obstacle_speed_factor = 0
-        else:
-            track_follower.obstacle_speed_factor = 1
+        track_follower.obstacle_speed_factor = obstacle_avoider.calc_speed(robot.get_calibrate_prox())
+        if track_follower.obstacle_speed_factor != 1.0:
+            print(f"[{robot.id.split('_')[-1]}] obstacle speed factor: {track_follower.obstacle_speed_factor}")
 
         if not track_follower.follow_track(gs):
             break
