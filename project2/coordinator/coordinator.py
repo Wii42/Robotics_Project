@@ -17,8 +17,8 @@ BEACONS: dict[int, Beacon] = {1: Beacon("beacon1", 450, 540, math.pi),
                               2: Beacon("beacon2", 500, 60, 0),
                               }
 
-BEACONS[1].next_beacon = (BEACONS[2], 0.14+0.18+0.15)
-BEACONS[2].next_beacon = (BEACONS[1], 0.11+0.18+0.14)
+BEACONS[1].next_beacon = (BEACONS[2], 0.74)
+BEACONS[2].next_beacon = (BEACONS[1], 0.65)
 
 COORDINATOR_ID: str = 'coordinator'
 
