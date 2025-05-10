@@ -22,7 +22,11 @@ def send_pos(robot: WifiEpuck, robot_position: list[float], position_on_track: P
     robot.ClientCommunication.send_msg_to(coordinator.COORDINATOR_ID,
                                           {"robot_id": robot.id, "robot_position": robot_position.copy(),
                                            "position_on_track": position_on_track.to_dict()})
-
+def calibrate_robot(robot_id: str, msg: str):
+    with open("calibrate.json", "a") as f:
+        f.write(f"{robot_id}: {msg}\n")
+        f.flush()
+        f.close()
 
 def main(robot_ip: str, norm_speed: float = 1):
     robot = wrapper.get_robot(robot_ip)
@@ -64,9 +68,11 @@ def main(robot_ip: str, norm_speed: float = 1):
 
         if detector.new_beacon_found():
             print(f"[{robot.id.split('_')[-1]}] found beacon: {detector.last_beacon.name}")
+            if odometry.position_from_beacon.from_beacon is not None:
+                calibrate_robot(robot.id, f"[{odometry.position_from_beacon.from_beacon.name}->{detector.last_beacon.name}] {odometry.position_from_beacon.distance}")
             odometry.sync_with_beacon(detector.last_beacon)
 
-        if step_counter.get_steps() % 10 == 0:
+        if step_counter.get_steps() % 5 == 0:
             send_pos(robot, [odometry.x, odometry.y], odometry.position_from_beacon)
 
         track_follower.obstacle_speed_factor = obstacle_avoider.calc_speed(proximity_memory.get_average())
