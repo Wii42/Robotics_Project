@@ -17,6 +17,9 @@ class SpeedAdjustor:
         #    speed_factor = 0.1
         #else:
         #    speed_factor =  2.0
+        bounded_speed_factor = max(-0.5, min(speed_factor, 2.0))
+        if bounded_speed_factor == 0.0:
+            bounded_speed_factor = 0.01 # needed as else the robot cant receive the message
 
         return max(0.001, min(speed_factor, 2.0))
 

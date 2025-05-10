@@ -9,6 +9,7 @@ from project2.robot.grey_area import GreyArea
 from project2.robot.obstacle_avoider import ObstacleAvoider
 from project2.robot.odometry import Odometry
 from project2.core.position_on_track import PositionOnTrack
+from project2.robot.sensor_memory import SensorMemory
 from project2.robot.step_counter import StepCounter
 from project2.robot.track_follower import TrackFollower
 
@@ -36,20 +37,18 @@ def main(robot_ip: str, norm_speed: float = 1):
     robot.init_client_communication()
 
     step_counter: StepCounter = StepCounter()
-
+    proximity_memory: SensorMemory = SensorMemory(5)
     grey_area: GreyArea = GreyArea(norm_speed)
-
-    obstacle_avoider: ObstacleAvoider = ObstacleAvoider(100, 40)
-
+    obstacle_avoider: ObstacleAvoider = ObstacleAvoider(40, 100)
     detector: BeaconDetector = BeaconDetector(norm_speed, grey_area, GREY_MIN, LINE_MAX, coordinator.BEACONS,
                                               step_counter)
     track_follower: TrackFollower = TrackFollower(robot, norm_speed, LINE_MAX)
-
     odometry: Odometry = Odometry(robot, step_counter)
 
     while robot.go_on():
         robot.go_on()
         gs: list[int] = robot.get_ground()
+        proximity_memory.update_memory(robot.get_calibrate_prox())
 
         while robot.has_receive_msg():
             msg = robot.receive_msg()
@@ -70,7 +69,7 @@ def main(robot_ip: str, norm_speed: float = 1):
         if step_counter.get_steps() % 10 == 0:
             send_pos(robot, [odometry.x, odometry.y], odometry.position_from_beacon)
 
-        track_follower.obstacle_speed_factor = obstacle_avoider.calc_speed(robot.get_calibrate_prox())
+        track_follower.obstacle_speed_factor = obstacle_avoider.calc_speed(proximity_memory.get_average())
         if track_follower.obstacle_speed_factor != 1.0:
             print(f"[{robot.id.split('_')[-1]}] obstacle speed factor: {track_follower.obstacle_speed_factor}")
 

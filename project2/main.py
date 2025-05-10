@@ -4,7 +4,7 @@ import threading
 import gui
 from project2.coordinator import coordinator
 
-ROBOTS: list[str] = ['192.168.2.212', '192.168.2.208']
+ROBOTS: list[str] = ['192.168.2.212', '192.168.2.205']
 
 if __name__ == "__main__":
     state_queue = queue.Queue()

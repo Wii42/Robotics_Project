@@ -26,14 +26,15 @@ class ObstacleAvoider:
         Calculate the speed factor based on the proximity sensors.
         :return: speed factor
         """
+        assert self.slow_down_proximity < self.reverse_proximity, "slow_down_proximity must be less than reverse_proximity"
+        #return self.lover_behaviour(proximity)
 
-        # calculate the as a linear function
         if proximity <= self.slow_down_proximity:
             return 1.0  # Full speed
 
-        slope = -1.0 / (self.slow_down_proximity - self.reverse_proximity)
-        intercept = slope * self.slow_down_proximity
-        return slope * proximity + intercept
+        slope = -1.0 / (self.reverse_proximity -self.slow_down_proximity)
+        speed = (proximity - self.reverse_proximity) * slope
+        return min(1.0, max(speed, -1.0))
 
     def calc_speed(self, proximity_sensors: list[float]):
         """
@@ -43,6 +44,15 @@ class ObstacleAvoider:
         weighted_average = self.get_proximity(proximity_sensors)
         return self.calc_speed_factor_on_proximity(weighted_average)
 
+    def lover_behaviour(self, prox: float):
+        ds = prox / self.reverse_proximity
+        return 1 - ds
 
+
+if __name__ == '__main__':
+    a = ObstacleAvoider(40, 100)
+    assert(a.calc_speed_factor_on_proximity(0) == 1.0)
+    assert(a.calc_speed_factor_on_proximity(40) == 1.0)
+    assert(a.calc_speed_factor_on_proximity(100) == 0)
 
 

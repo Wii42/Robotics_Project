@@ -6,7 +6,7 @@ from task_2.determine_side import DetermineSide
 from task_2.ground_sensor_memory import GroundSensorMemory
 from task_2.line_alignment import LineAlignment
 
-MY_IP = '192.168.2.202'
+MY_IP = '192.168.2.211'
 LINE_MAX_VALUE: int = 500
 
 STEPS_TO_DETERMINE_SIDE: int = 20
@@ -16,6 +16,8 @@ def main():
     robot = wrapper.get_robot(MY_IP)
 
     robot.init_ground()
+    robot.init_camera("./tmp")
+    robot.initiate_model()
 
     counter: StepCounter = StepCounter()
 
