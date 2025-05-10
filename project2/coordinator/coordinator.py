@@ -48,7 +48,7 @@ def main(robots: list[str], state_queue: queue.Queue = None):
             position_on_track = msg.get("position_on_track")
             if position_on_track is not None:
                 robot_positions_on_track[robot_id] = position_from_dict(position_on_track, list(BEACONS.values()))
-                print(robot_positions_on_track)
+                #print(robot_positions_on_track)
                 calculate_all_robot_distances(robot_positions_on_track, speed_adjustor)
             # print(msg)
 
