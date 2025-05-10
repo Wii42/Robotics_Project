@@ -50,7 +50,7 @@ def main(state_queue: queue.Queue, beacons: list[Beacon]):
         # Roboter zeichnen
         for i, robot_id in enumerate(robot_position):
             robot = robot_position[robot_id]
-            pygame.draw.circle(screen, ROBOT_COLORS[i], (int(robot[0]), int(robot[1])), 10)
+            pygame.draw.circle(screen, ROBOT_COLORS[i], (int(robot[0]), int(robot[1])), 50)
 
         # Anzeige aktualisieren
         pygame.display.flip()

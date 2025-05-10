@@ -13,8 +13,8 @@ from project2.coordinator.distance_calculator import compute_distance
 from project2.core.position_on_track import PositionOnTrack, position_from_dict
 from project2.coordinator.speed_adjustor import SpeedAdjustor
 
-BEACONS: dict[int, Beacon] = {1: Beacon("beacon1", 450, 540, math.pi),
-                              2: Beacon("beacon2", 500, 60, 0),
+BEACONS: dict[int, Beacon] = {1: Beacon("beacon1", 360, 540, math.pi),
+                              2: Beacon("beacon2", 510, 50, 0),
                               }
 
 BEACONS[1].next_beacon = (BEACONS[2], 0.74)

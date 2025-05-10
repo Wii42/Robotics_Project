@@ -1,4 +1,6 @@
+import json
 import math
+import os
 
 from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck
 from time import perf_counter_ns
@@ -17,10 +19,6 @@ def wheel_distance(angular_speed: float, wheel_radius: float, time_delta: float)
     """
     return angular_speed * wheel_radius * time_delta
 
-theta_correction_factor: dict[str, float] = {"207": 0.782608696} # correction factor for the theta angle
-# expected angle 90, receceived 115, so 90/115 = 0.782608696
-# collected with robot 207, 211 does not need correction
-
 class Odometry:
     def __init__(self, robot: WifiEpuck, step_counter: StepCounter):
         self.robot: WifiEpuck = robot
@@ -33,6 +31,9 @@ class Odometry:
         self.step_counter: StepCounter = step_counter
         self.position_from_beacon: PositionOnTrack = PositionOnTrack(0)
         self.calibrated_by_beacon: bool = False
+        self.distance_correction_factor: float = 1.0
+        self.theta_correction_factor: float = 1.0
+        self.read_calibration_file()
 
     def odometry(self, speed_left: float, speed_right: float):
         wheel_diameter: float = 0.041  # in m, source https://www.gctronic.com/doc/index.php/e-puck2
@@ -46,9 +47,9 @@ class Odometry:
         distance_left: float = wheel_distance(speed_left, wheel_radius, time_delta/ 1e9)
         distance_right: float = wheel_distance(speed_right, wheel_radius, time_delta/ 1e9)
 
-        distance: float = (distance_right + distance_left) / 2
+        distance: float = ((distance_right + distance_left) / 2)* self.distance_correction_factor
         # calculate the change in position
-        delta_theta: float = ((distance_left - distance_right) / distance_between_wheels) * self.theta_correction()
+        delta_theta: float = ((distance_left - distance_right) / distance_between_wheels) * self.theta_correction_factor
         delta_x: float = distance*math.cos(self.theta + (delta_theta/2))
         delta_y: float = distance*math.sin(self.theta + (delta_theta/2))
 
@@ -63,9 +64,7 @@ class Odometry:
             self.position_from_beacon.distance += distance
 
 
-    def theta_correction(self) -> float:
-        robot_name = self.robot_name()
-        return theta_correction_factor.get(robot_name, 1)
+
 
     def robot_name(self):
         return self.robot.id.split("_")[-1]
@@ -86,6 +85,22 @@ class Odometry:
         self.calibrated_by_beacon = True
         self.position_from_beacon.from_beacon = beacon
         self.position_from_beacon.distance = 0
+
+    def read_calibration_file(self):
+        calibration_file = "calibrate.json"
+        if os.path.exists(calibration_file):
+            with open("calibrate.json", "r") as f:
+                string = f.read()
+                calibration_dict = json.loads(string)
+                robot_id = self.robot.id
+                if robot_id in calibration_dict:
+                    self.distance_correction_factor = calibration_dict[robot_id]["distance_correction_factor"]
+                    self.theta_correction_factor = calibration_dict[robot_id]["theta_correction_factor"]
+                    print(f"calibration for {robot_id}: {self.distance_correction_factor}, {self.theta_correction_factor}")
+                else:
+                    print(f"no calibration for {robot_id}")
+        else:
+            print("no calibration file found")
 
 
 class OdometryReading:
