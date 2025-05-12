@@ -1,4 +1,4 @@
-from task_2.determine_side import TrackSide
+from determine_side import TrackSide
 
 
 class LineAlignment:
