@@ -13,8 +13,9 @@ from determine_side import DetermineSide
 from line_alignment import LineAlignment
 import utils
 
-MY_IP = '192.168.2.214'
+MY_IP = '192.168.2.208'
 LINE_MAX_VALUE: int = 500
+GREY_MAX_VALUE: int = 750
 
 STEPS_TO_DETERMINE_SIDE: int = 20
 
@@ -22,16 +23,9 @@ OBJECT_DETECTIONS_DIR = "./object_detections"
 
 
 class KartState(Enum):
-    LINE_FOLLOWING_AND_ALIGNMENT = (0, lambda mario_kart: mario_kart.line_following_and_alignment())
-    CHANGE_LANE_TO_LEFT = (1, lambda mario_kart: mario_kart.change_lane_to_left())
-    CHANGE_LANE_TO_RIGHT = (2, lambda mario_kart: mario_kart.change_lane_to_right())
-
-    def __init__(self, value, function):
-        self.value: int = value
-        self.function = function
-
-    def do(self, mario_kart: 'MarioKart'):
-        return self.function(mario_kart)
+    LINE_FOLLOWING_AND_ALIGNMENT = 0
+    CHANGE_LANE_TO_LEFT = 1
+    CHANGE_LANE_TO_RIGHT = 2
 
 
 class MarioKart:
@@ -43,12 +37,17 @@ class MarioKart:
         self.counter: StepCounter = StepCounter()
         self.line_follower: TrackFollower | None = None  # dependent on robot
         self.ground_sensor_memory: SensorMemory = SensorMemory(3)
-        self.determine_side: DetermineSide = DetermineSide(750, LINE_MAX_VALUE, STEPS_TO_DETERMINE_SIDE)
+        self.determine_side: DetermineSide = DetermineSide(GREY_MAX_VALUE, LINE_MAX_VALUE, STEPS_TO_DETERMINE_SIDE)
         self.line_alignment: LineAlignment = LineAlignment()
         self.check_side_necessary: bool = True
         self.current_state: KartState = KartState.LINE_FOLLOWING_AND_ALIGNMENT
-        self.step_of_last_detection = 0
-        self.detected_lines = 0
+        # self.detected_lines = 0
+        self.state_counter = StepCounter()
+
+    def states(self) -> dict[KartState, object]:
+        return {KartState.LINE_FOLLOWING_AND_ALIGNMENT: self.line_following_and_alignment,
+                KartState.CHANGE_LANE_TO_LEFT: self.change_lane_to_left,
+                KartState.CHANGE_LANE_TO_RIGHT: self.change_lane_to_right}
 
     def init_robot(self):
         self.robot = wrapper.get_robot(MY_IP)
@@ -73,9 +72,9 @@ class MarioKart:
 
     def line_following_and_alignment(self):
 
-        if self.counter.get_steps() > STEPS_TO_DETERMINE_SIDE and self.check_side_necessary:
+        if self.state_counter.get_steps() > STEPS_TO_DETERMINE_SIDE * 2 and self.check_side_necessary:
             self.line_alignment.check_line_alignment(self.determine_side.get_probable_side())
-            check_side_necessary = False
+            self.check_side_necessary = False
 
         # print(gs)
         # print(gs)
@@ -87,13 +86,13 @@ class MarioKart:
                                            invert_side=self.line_alignment.get_follow_left_side())
         # print(determine_side.get_probable_side())
         # print()
-        self.current_state = self.change_lanes_detection()
+        self.set_state(self.change_lanes_detection())
         return True
 
     def change_lanes_detection(self):
 
         if self.counter.get_steps() % 50 == 0:
-            self.robot.init_camera(dir)
+            self.robot.init_camera(OBJECT_DETECTIONS_DIR)
 
         curr_block = None
         if self.counter.get_steps() % 50 == 1:
@@ -103,40 +102,46 @@ class MarioKart:
             currSide = self.determine_side.get_probable_side()
 
             if (currSide == TrackSide.LEFT) and (curr_block == "Green Block"):
-                self.step_of_last_detection = self.counter.get_steps()
-                return 2
+                return KartState.CHANGE_LANE_TO_RIGHT
             if (currSide == TrackSide.RIGHT) and (curr_block == "Red Block"):
-                self.step_of_last_detection = self.counter.get_steps()
-                return 1
-        return 0
+                return KartState.CHANGE_LANE_TO_LEFT
+        return KartState.LINE_FOLLOWING_AND_ALIGNMENT
+
+    def change_lanes(self, change_to_left: bool):
+        if self.state_counter.get_steps() < 100 / self.norm_speed:
+            speeds = [self.norm_speed * 2, self.norm_speed * 0.5]
+            if change_to_left:
+                speeds.reverse()
+            self.robot.set_speed(*speeds)
+        else:
+            self.robot.set_speed(self.norm_speed, self.norm_speed)
+        if self.line_detection() and self.state_counter.get_steps() > 300 / self.norm_speed:
+            self.set_state(KartState.LINE_FOLLOWING_AND_ALIGNMENT)
+            self.line_alignment.follow_left_side = not self.line_alignment.follow_left_side
+            self.check_side_necessary = True
+        return True
 
     def change_lane_to_right(self):
-
-        self.robot.set_speed(self.norm_speed * 1.2, self.norm_speed * 0.9)
-        if self.line_detection():
-            self.current_state = KartState.LINE_FOLLOWING_AND_ALIGNMENT
-        return True
+        return self.change_lanes(change_to_left=False)
 
     def change_lane_to_left(self):
-
-        self.robot.set_speed(self.norm_speed * 0.9, self.norm_speed * 1.2)
-        if self.line_detection():
-            self.current_state = KartState.LINE_FOLLOWING_AND_ALIGNMENT
-        return True
+        return self.change_lanes(change_to_left=True)
 
     def line_detection(self):
 
-        if self.counter.get_steps() - self.step_of_last_detection > 200:
-            detections = self.ground_sensor_memory.get_average()
-            temp = 0
-            for detec in detections:
-                if detec < LINE_MAX_VALUE:
-                    self.detected_lines += 1
-            if self.detected_lines > 10:
-                detected_lines = 0
-                return True
-            return False
-        return None
+        detections: list[int] = self.ground_sensor_memory.get_average()
+        is_white = [True for detection in detections if detection > self.determine_side.grey_max_value+50]
+        if any(is_white):
+            print("deetcted white: ", detections)
+            return True
+        ##for detec in detections:
+        ##    if detec < LINE_MAX_VALUE:
+        ##        self.detected_lines += 1
+        ##if self.detected_lines > 10:
+        ##    self.detected_lines = 0
+        ##    return True
+        ##return False
+        return False
 
     ####################################################################################################
 
@@ -155,15 +160,28 @@ class MarioKart:
             return True
         return False
 
-    def run(self):
-        no_error = True
+    def set_state(self, new_state: KartState):
+        if new_state != self.current_state:
+            self.state_counter.reset()
+        self.current_state = new_state
 
+    def run(self):
+        self.init_robot()
+        self.init_line_follower()
+
+        print("init complete")
+
+        no_error = True
+        assert (self.robot is not None)
+        assert (self.line_follower is not None)
         while self.robot.go_on() and no_error:
             gs: list[int] = self.robot.get_ground()
             self.ground_sensor_memory.update_memory(gs)
-            no_error = self.current_state.do(self)
+            states = self.states()
+            no_error = states[self.current_state]()
 
             self.counter.step()
+            self.state_counter.step()
 
         self.robot.clean_up()
 

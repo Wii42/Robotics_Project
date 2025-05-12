@@ -7,3 +7,6 @@ class StepCounter:
 
     def get_steps(self):
         return self.steps
+
+    def reset(self):
+        self.steps = 0
