@@ -1,5 +1,8 @@
 from unifr_api_epuck import wrapper
 import os
+
+from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck
+
 from project2.robot.step_counter import StepCounter
 from project2.robot.track_follower import TrackFollower
 from determine_side import TrackSide
@@ -13,6 +16,17 @@ MY_IP = '192.168.2.214'
 LINE_MAX_VALUE: int = 500
 
 STEPS_TO_DETERMINE_SIDE: int = 20
+
+
+class MarioKart:
+
+    def __init__(self, robot_ip: str):
+        self.robot_ip: str = robot_ip
+        self.robot: WifiEpuck | None = None # init later
+        self.counter: StepCounter = StepCounter()
+        self.line_follower: TrackFollower | None = None # dependent on robot
+        self.sensor_memory: GroundSensorMemory = GroundSensorMemory(3)
+
 
 
 def main():
@@ -93,7 +107,7 @@ def main():
     def line_detection():
         nonlocal detected_lines
 
-        if (counter.get_steps() - step_of_last_detection > 200):
+        if counter.get_steps() - step_of_last_detection > 200:
             detections = sensor_memory.get_average()
             temp = 0
             for detec in detections:
@@ -103,18 +117,19 @@ def main():
                 detected_lines = 0
                 return True
             return False
+        return None
 
     def change_lanes_detection():
         nonlocal step_of_last_detection
 
-        if (counter.get_steps() % 50 == 0):
+        if counter.get_steps() % 50 == 0:
             robot.init_camera(dir)
 
         curr_block = None
-        if (counter.get_steps() % 50 == 1):
+        if counter.get_steps() % 50 == 1:
             curr_block = utils.block_detector(robot, 30, 20)
             robot.disable_camera()
-        if curr_block != None:
+        if curr_block is not None:
             currSide = determine_side.get_probable_side()
 
             if (currSide == TrackSide.LEFT) and (curr_block == "Green Block"):
