@@ -22,20 +22,21 @@ def block_detector(robot, upperB, lowerB):
     red_blocks = []
     green_blocks = []
     
-    if detections != None and len(detections) > 0:
+    if detections is not None and len(detections) > 0:
         red_blocks =[obj for obj in detections if obj.label == "Red Block"]
         green_blocks =[obj for obj in detections if obj.label == "Green Block"]
 
-    object = object_with_largest_area(red_blocks)
-    if(object!=None and lowerB<object.height<upperB):
+    obj = object_with_largest_area(red_blocks)
+    if obj is not None and lowerB<obj.height<upperB:
         
-        print(object.height)
-        print(object.label)
-        return object.label
+        print(obj.height)
+        print(obj.label)
+        return obj.label
 
-    object = object_with_largest_area(green_blocks)
-    if(object!=None and lowerB<object.height<upperB):
-        print(object.height)
-        print(object.label)
-        print(object.height)
-        return object.label
+    obj = object_with_largest_area(green_blocks)
+    if obj is not None and lowerB<obj.height<upperB:
+        print(obj.height)
+        print(obj.label)
+        print(obj.height)
+        return obj.label
+    return None

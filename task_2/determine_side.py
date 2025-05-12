@@ -1,6 +1,6 @@
 from enum import Enum
 
-from track_follower import RobotPosition
+from project2.robot.track_follower import RobotPosition
 
 class TrackSide(Enum):
     LEFT = 0
