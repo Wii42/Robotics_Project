@@ -1,16 +1,4 @@
 {
-  "192_168_2_205": {
-    "from": "beacon1",
-    "to": "beacon2",
-    "distance_correction_factor": 0.962086758027153,
-    "theta_correction_factor": -0.8386893986392797
-  },
-  "192_168_2_216": {
-    "from": "beacon2",
-    "to": "beacon1",
-    "distance_correction_factor": 1.0304633600561957,
-    "theta_correction_factor": 0.6996289171616907
-  },
   "192_168_2_208": {
     "from": "beacon1",
     "to": "beacon2",

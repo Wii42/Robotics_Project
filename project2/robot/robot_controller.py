@@ -18,7 +18,7 @@ from project2.robot.track_follower import TrackFollower
 
 LINE_MAX: int = 750  # to determine if the sensor is on the line
 
-GREY_MIN: int = 450  # to determine if the sensor is on the grey area
+GREY_MIN: int = 500  # to determine if the sensor is on the grey area
 
 
 class RobotController:
@@ -41,6 +41,7 @@ class RobotController:
 
     def run(self):
         self.init_track_follower_odometry()
+        #self.odometry.calibrate_robot()
 
         self.robot.calibrate_prox()
         self.robot.init_client_communication()
@@ -71,7 +72,7 @@ class RobotController:
 
     def calibrate_robot(self):
         self.init_track_follower_odometry()
-
+        print("calibrating robot")
         while self.robot.go_on():
             gs: list[int] = self.robot.get_ground()
 
@@ -100,12 +101,12 @@ class RobotController:
     def adjust_speed_to_possible_obstacle(self):
         self.track_follower.obstacle_speed_factor = self.obstacle_avoider.calc_speed(
             self.proximity_memory.get_average())
-        if self.track_follower.obstacle_speed_factor != 1.0:
-            print(
-                f"[{self.robot.id.split('_')[-1]}] obstacle speed factor: {self.track_follower.obstacle_speed_factor}")
+        #if self.track_follower.obstacle_speed_factor != 1.0:
+        #    print(
+        #        f"[{self.robot.id.split('_')[-1]}] obstacle speed factor: {self.track_follower.obstacle_speed_factor}")
 
     def notify_coordinator_of_position(self):
-        if self.step_counter.get_steps() % 5 == 0:
+        if self.step_counter.get_steps() % 20 == 0:
             self.send_pos([self.odometry.x, self.odometry.y], self.odometry.position_from_beacon)
 
     def send_pos(self, robot_position: list[float], position_on_track: PositionOnTrack):

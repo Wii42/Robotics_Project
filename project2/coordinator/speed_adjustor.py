@@ -11,7 +11,7 @@ class SpeedAdjustor:
         if distance_to_next_robot is None:
             return None
         x = distance_to_next_robot - self.optimal_distance
-        m = (1 / self.optimal_distance) / 0.5
+        m = (1 / self.optimal_distance) / 0.25
         speed_factor = m * x + 1.0
         #if distance_to_next_robot < self.optimal_distance:
         #    speed_factor = 0.1

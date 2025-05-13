@@ -13,11 +13,11 @@ from determine_side import DetermineSide
 from line_alignment import LineAlignment
 import utils
 
-MY_IP = '192.168.2.208'
-LINE_MAX_VALUE: int = 500
+MY_IP = '192.168.2.205'
+LINE_MAX_VALUE: int = 550
 GREY_MAX_VALUE: int = 750
 
-STEPS_TO_DETERMINE_SIDE: int = 20
+STEPS_TO_DETERMINE_SIDE: int = 100
 
 OBJECT_DETECTIONS_DIR = "./object_detections"
 
@@ -72,7 +72,7 @@ class MarioKart:
 
     def line_following_and_alignment(self):
 
-        if self.state_counter.get_steps() > STEPS_TO_DETERMINE_SIDE * 2 and self.check_side_necessary:
+        if self.state_counter.get_steps() > STEPS_TO_DETERMINE_SIDE and self.check_side_necessary:
             self.line_alignment.check_line_alignment(self.determine_side.get_probable_side())
             self.check_side_necessary = False
 
@@ -91,20 +91,24 @@ class MarioKart:
 
     def change_lanes_detection(self):
 
-        if self.counter.get_steps() % 50 == 0:
+        if self.counter.get_steps() % 50 == 0 and self.state_counter.get_steps() > 30:
             self.robot.init_camera(OBJECT_DETECTIONS_DIR)
 
         curr_block = None
-        if self.counter.get_steps() % 50 == 1:
+        if self.counter.get_steps() % 50 == 1 and self.state_counter.get_steps() >= STEPS_TO_DETERMINE_SIDE:
             curr_block = utils.block_detector(self.robot, 30, 20)
             self.robot.disable_camera()
         if curr_block is not None:
             currSide = self.determine_side.get_probable_side()
-
-            if (currSide == TrackSide.LEFT) and (curr_block == "Green Block"):
-                return KartState.CHANGE_LANE_TO_RIGHT
-            if (currSide == TrackSide.RIGHT) and (curr_block == "Red Block"):
-                return KartState.CHANGE_LANE_TO_LEFT
+            confidence_level = self.determine_side.certainty_of_last_guess
+            print("curr block: ", curr_block, " curr side: ", currSide, " confidence: ", confidence_level)
+            if confidence_level >= 0.4:
+                if (currSide == TrackSide.LEFT) and (curr_block == "Green Block"):
+                    print("change to right")
+                    return KartState.CHANGE_LANE_TO_RIGHT
+                if (currSide == TrackSide.RIGHT) and (curr_block == "Red Block"):
+                    print("change to left")
+                    return KartState.CHANGE_LANE_TO_LEFT
         return KartState.LINE_FOLLOWING_AND_ALIGNMENT
 
     def change_lanes(self, change_to_left: bool):
@@ -118,7 +122,7 @@ class MarioKart:
         if self.line_detection() and self.state_counter.get_steps() > 300 / self.norm_speed:
             self.set_state(KartState.LINE_FOLLOWING_AND_ALIGNMENT)
             self.line_alignment.follow_left_side = not self.line_alignment.follow_left_side
-            self.check_side_necessary = True
+            self.check_side_necessary = False
         return True
 
     def change_lane_to_right(self):
@@ -132,7 +136,7 @@ class MarioKart:
         detections: list[int] = self.ground_sensor_memory.get_average()
         is_white = [True for detection in detections if detection > self.determine_side.grey_max_value+50]
         if any(is_white):
-            print("deetcted white: ", detections)
+            #print("detected white: ", detections)
             return True
         ##for detec in detections:
         ##    if detec < LINE_MAX_VALUE:
@@ -177,6 +181,7 @@ class MarioKart:
         while self.robot.go_on() and no_error:
             gs: list[int] = self.robot.get_ground()
             self.ground_sensor_memory.update_memory(gs)
+            #print(self.determine_side.get_probable_side())
             states = self.states()
             no_error = states[self.current_state]()
 

@@ -33,7 +33,6 @@ class Odometry:
         self.calibrated_by_beacon: bool = False
         self.distance_correction_factor: float = 1.0
         self.theta_correction_factor: float = 1.0
-        self.read_calibration_file()
 
     def odometry(self, speed_left: float, speed_right: float):
         wheel_diameter: float = 0.041  # in m, source https://www.gctronic.com/doc/index.php/e-puck2
@@ -64,6 +63,8 @@ class Odometry:
             self.position_from_beacon.distance += distance
 
 
+    def calibrate_robot(self):
+        self.read_calibration_file()
 
 
     def robot_name(self):

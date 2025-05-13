@@ -19,6 +19,7 @@ class DetermineSide:
         self.grey_min_value = grey_min_value
         self.readings: list[TrackSide] = [] # list of all reading on which side the robot is
         self.steps_to_determine_side = steps_to_determine_side
+        self.certainty_of_last_guess = None
 
 
     def in_grey(self, value: int) -> bool:
@@ -78,12 +79,36 @@ class DetermineSide:
         left = values.count(TrackSide.LEFT)
         right = values.count(TrackSide.RIGHT)
 
+
         if left == right:
-            return TrackSide.UNKNOWN
+            dominant = left
+            minority = right
+            result = TrackSide.UNKNOWN
         elif left > right:
-            return TrackSide.LEFT
+            dominant = left
+            minority = right
+            result =  TrackSide.LEFT
         else:
-            return TrackSide.RIGHT
+            dominant = right
+            minority = left
+            result = TrackSide.RIGHT
+
+        self.certainty_of_last_guess = self.certainty_of_guess(dominant, minority, len(values))
+
+        return result
+
+
+
+    def certainty_of_guess(self, dominant_side: int, minority_side: int, total_values: int) -> float:
+        """
+        Calculate the certainty of the guess based on the number of readings.
+        :param dominant_side: The number of readings for the dominant side, e.g. the side guessed where the robot is.
+        :param minority_side: The number of readings for the minority side.
+        :param total_values: The total number of readings, including the UNKNOWN readings.
+        :return: The certainty of the guess as a float between 0 and 1.
+        """
+        return (dominant_side - minority_side) / total_values
+
 
 
 
