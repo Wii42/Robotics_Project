@@ -15,8 +15,8 @@ SECOND = 3
 
 state = IDLE
 
-while True:
-    if race_manager.has_receive_msg():
+while(True):
+    if(race_manager.has_receive_msg()):
         msg = race_manager.receive_msg()
         print(msg)
         if msg == "start":
@@ -25,18 +25,18 @@ while True:
         elif msg == "goal":
             if state == RACE:
                 time_goal1 = datetime.now()
-                print("first " + str(time_goal1 - time_start))
+                print ("first "+str(time_goal1-time_start))
                 state = FIRST
-            elif state == FIRST:
+            elif state == FIRST :
                 time_goal2 = time.time()
                 time_goal2 = datetime.now()
-                print("second " + str(time_goal2 - time_start))
+                print ("second "+str(time_goal2-time_start))
                 state = SECOND
-    if state == SECOND:
+    if state == SECOND :
         break
 
 timeformat = "%H:%M:%S %f"
 
-print(
-    f"\nStart time: {time_start}\n\nArrival times:\n\n\t1. {time_goal1.strftime(timeformat)}\n\t2. {time_goal2.strftime(timeformat)}\n\nDifference: {time_goal2 - time_goal1}")
+print(f"\nStart time: {time_start}\n\nArrival times:\n\n\t1. {time_goal1.strftime(timeformat)}\n\t2. {time_goal2.strftime(timeformat)}\n\nDifference: {time_goal2-time_goal1}")
+            
 

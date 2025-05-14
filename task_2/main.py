@@ -1,5 +1,7 @@
 from enum import Enum
 
+from typing import Callable
+
 from unifr_api_epuck import wrapper
 import os
 
@@ -12,10 +14,11 @@ from determine_side import TrackSide
 from determine_side import DetermineSide
 from line_alignment import LineAlignment
 import utils
+from task_2.calibration import normalize_gs
 
-MY_IP = '192.168.2.205'
-LINE_MAX_VALUE: int = 550
-GREY_MAX_VALUE: int = 750
+MY_IP = '192.168.2.208'
+LINE_MAX_VALUE: int = 600
+GREY_MAX_VALUE: int = 800
 
 STEPS_TO_DETERMINE_SIDE: int = 100
 
@@ -44,7 +47,7 @@ class MarioKart:
         # self.detected_lines = 0
         self.state_counter = StepCounter()
 
-    def states(self) -> dict[KartState, object]:
+    def states(self) -> dict[KartState, Callable]:
         return {KartState.LINE_FOLLOWING_AND_ALIGNMENT: self.line_following_and_alignment,
                 KartState.CHANGE_LANE_TO_LEFT: self.change_lane_to_left,
                 KartState.CHANGE_LANE_TO_RIGHT: self.change_lane_to_right}
@@ -75,6 +78,7 @@ class MarioKart:
         if self.state_counter.get_steps() > STEPS_TO_DETERMINE_SIDE and self.check_side_necessary:
             self.line_alignment.check_line_alignment(self.determine_side.get_probable_side())
             self.check_side_necessary = False
+            self.line_follower.line_max_value = GREY_MAX_VALUE
 
         # print(gs)
         # print(gs)
@@ -86,17 +90,20 @@ class MarioKart:
                                            invert_side=self.line_alignment.get_follow_left_side())
         # print(determine_side.get_probable_side())
         # print()
+
         self.set_state(self.change_lanes_detection())
         return True
 
     def change_lanes_detection(self):
+        picture_frequency = 50
 
-        if self.counter.get_steps() % 50 == 0 and self.state_counter.get_steps() > 30:
+
+        if self.counter.get_steps() % picture_frequency == 0 and self.state_counter.get_steps() > 30:
             self.robot.init_camera(OBJECT_DETECTIONS_DIR)
 
         curr_block = None
-        if self.counter.get_steps() % 50 == 1 and self.state_counter.get_steps() >= STEPS_TO_DETERMINE_SIDE:
-            curr_block = utils.block_detector(self.robot, 30, 20)
+        if self.counter.get_steps() % picture_frequency == 1 and self.state_counter.get_steps() >= STEPS_TO_DETERMINE_SIDE:
+            curr_block = utils.block_detector(self.robot, 30, 15)
             self.robot.disable_camera()
         if curr_block is not None:
             currSide = self.determine_side.get_probable_side()
@@ -151,9 +158,9 @@ class MarioKart:
 
     def detect_epucks(self):
         prox_values = self.robot.get_calibrate_prox()
-        av_front_prox = (prox_values[6] * 2 + prox_values[7] + prox_values[0] + prox_values[1] * 2) / 4
+        av_front_prox = (prox_values[6] + prox_values[7]*2 + prox_values[0]*2 + prox_values[1]) / 4
 
-        if av_front_prox > 100:
+        if av_front_prox > 150:
             return True
         return False
 
@@ -173,22 +180,57 @@ class MarioKart:
         self.init_robot()
         self.init_line_follower()
 
+        data = self.init_gsensors_record()
+
         print("init complete")
 
-        no_error = True
+        no_error: bool = True
         assert (self.robot is not None)
         assert (self.line_follower is not None)
         while self.robot.go_on() and no_error:
-            gs: list[int] = self.robot.get_ground()
+            gs: list[int | float] = self.robot.get_ground()
+            gs = normalize_gs(gs, self.robot_ip)
             self.ground_sensor_memory.update_memory(gs)
             #print(self.determine_side.get_probable_side())
             states = self.states()
             no_error = states[self.current_state]()
 
+            if data is not None:
+                self.record_gsensors(data, gs)
+
+            if self.detect_end():
+                print("detected end")
+                break
+
+            if self.detect_epucks():
+                print("detected epuck")
+                self.robot.set_speed(0, 0)
+
+
             self.counter.step()
             self.state_counter.step()
 
         self.robot.clean_up()
+
+    def init_gsensors_record(self):
+        data = open("Gsensors.csv", "w")
+        if data is None:
+            print('Error opening data file!\n')
+            return
+
+        # write header in CSV file
+        data.write('step,')
+        for i in range(self.robot.GROUND_SENSORS_COUNT):
+            data.write('gs' + str(i) + ',')
+        data.write('\n')
+        return data
+
+    def record_gsensors(self, data, gs):
+        # write a line of data
+        data.write(str(self.counter.get_steps()) + ',')
+        for v in gs:
+            data.write(str(v) + ',')
+        data.write('\n')
 
 
 if __name__ == "__main__":
