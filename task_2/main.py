@@ -16,6 +16,7 @@ from line_alignment import LineAlignment
 import utils
 from task_2.calibration import normalize_gs
 
+# Constants for robot configuration
 MY_IP = '192.168.2.208'
 LINE_MAX_VALUE: int = 600
 GREY_MAX_VALUE: int = 800
@@ -26,26 +27,38 @@ OBJECT_DETECTIONS_DIR = "./object_detections"
 
 
 class KartState(Enum):
+    """
+    Enum representing the different states of the MarioKart robot.
+    """
     LINE_FOLLOWING_AND_ALIGNMENT = 0
     CHANGE_LANE_TO_LEFT = 1
     CHANGE_LANE_TO_RIGHT = 2
 
 
 class MarioKart:
+    """
+    The MarioKart class controls the robot's behavior, including line following,
+    lane changing, and obstacle detection.
+    """
 
     def __init__(self, robot_ip: str, norm_speed: float = 3):
+        """
+        Initialize the MarioKart robot.
+
+        :param robot_ip: The IP address of the robot.
+        :param norm_speed: The normal speed of the robot.
+        """
         self.robot_ip: str = robot_ip
         self.norm_speed: float = norm_speed
-        self.robot: WifiEpuck | None = None  # init later
-        self.counter: StepCounter = StepCounter()
-        self.line_follower: TrackFollower | None = None  # dependent on robot
-        self.ground_sensor_memory: SensorMemory = SensorMemory(3)
+        self.robot: WifiEpuck | None = None  # Robot instance (initialized later)
+        self.counter: StepCounter = StepCounter()  # Step counter for general tracking
+        self.line_follower: TrackFollower | None = None  # Line follower instance
+        self.ground_sensor_memory: SensorMemory = SensorMemory(3)  # Memory for ground sensor readings
         self.determine_side: DetermineSide = DetermineSide(GREY_MAX_VALUE, LINE_MAX_VALUE, STEPS_TO_DETERMINE_SIDE)
-        self.line_alignment: LineAlignment = LineAlignment()
-        self.check_side_necessary: bool = True
-        self.current_state: KartState = KartState.LINE_FOLLOWING_AND_ALIGNMENT
-        # self.detected_lines = 0
-        self.state_counter = StepCounter()
+        self.line_alignment: LineAlignment = LineAlignment()  # Line alignment logic
+        self.check_side_necessary: bool = True  # Flag to check if side alignment is needed
+        self.current_state: KartState = KartState.LINE_FOLLOWING_AND_ALIGNMENT  # Initial state
+        self.state_counter = StepCounter()  # Counter for state transitions
 
     def states(self) -> dict[KartState, Callable]:
         return {KartState.LINE_FOLLOWING_AND_ALIGNMENT: self.line_following_and_alignment,
@@ -53,23 +66,23 @@ class MarioKart:
                 KartState.CHANGE_LANE_TO_RIGHT: self.change_lane_to_right}
 
     def init_robot(self):
+        """
+        Initialize the robot, including sensors, ground calibration, and model loading.
+        """
         self.robot = wrapper.get_robot(MY_IP)
         try:
-            os.mkdir(OBJECT_DETECTIONS_DIR)
+            os.mkdir(OBJECT_DETECTIONS_DIR)  # Create directory for object detections
         except OSError as error:
             print(error)
-        self.robot.init_ground()
-
-        self.robot.initiate_model()
-
-        self.robot.init_sensors()
-        self.robot.calibrate_prox()
+        self.robot.init_ground()  # Initialize ground sensors
+        self.robot.initiate_model()  # Load the robot's model
+        self.robot.init_sensors()  # Initialize other sensors
+        self.robot.calibrate_prox()  # Calibrate proximity sensors
 
     def init_line_follower(self):
         """
-        Initialize the line follower with the robot and the max for the ground be considered black.
-        Should only be called after the robot is initialized by self.init_robot().
-        :return:
+        Initialize the line follower with the robot and the maximum value for the ground
+        to be considered black. Should only be called after the robot is initialized.
         """
         self.line_follower: TrackFollower = TrackFollower(self.robot, self.norm_speed, LINE_MAX_VALUE)
 
@@ -80,11 +93,11 @@ class MarioKart:
             self.check_side_necessary = False
             self.line_follower.line_max_value = GREY_MAX_VALUE
 
-        # print(gs)
-        # print(gs)
-        # robot.set_speed(5,5)
-        if not self.line_follower.follow_track(self.ground_sensor_memory.get_average(), use_two_sensors_approach=True,
-                                               invert_side=self.line_alignment.get_follow_left_side()):
+        # Follow the track using the line follower
+        if not self.line_follower.follow_track(
+                self.ground_sensor_memory.get_average(),
+                use_two_sensors_approach=True,
+                invert_side=self.line_alignment.get_follow_left_side()):
             return False
         self.determine_side.determine_side(self.ground_sensor_memory.get_average(), self.line_follower.position,
                                            invert_side=self.line_alignment.get_follow_left_side())
@@ -105,6 +118,7 @@ class MarioKart:
         if self.counter.get_steps() % picture_frequency == 1 and self.state_counter.get_steps() >= STEPS_TO_DETERMINE_SIDE:
             curr_block = utils.block_detector(self.robot, 30, 15)
             self.robot.disable_camera()
+
         if curr_block is not None:
             currSide = self.determine_side.get_probable_side()
             confidence_level = self.determine_side.certainty_of_last_guess
@@ -119,6 +133,13 @@ class MarioKart:
         return KartState.LINE_FOLLOWING_AND_ALIGNMENT
 
     def change_lanes(self, change_to_left: bool):
+        """
+        Handle the lane-changing process.
+
+        :param change_to_left: True if changing to the left lane, False otherwise.
+        :return: True if the lane change is complete.
+        """
+        # Adjust speed for lane change
         if self.state_counter.get_steps() < 100 / self.norm_speed:
             speeds = [self.norm_speed * 2, self.norm_speed * 0.5]
             if change_to_left:
@@ -126,6 +147,8 @@ class MarioKart:
             self.robot.set_speed(*speeds)
         else:
             self.robot.set_speed(self.norm_speed, self.norm_speed)
+
+        # Detect the line to complete the lane change
         if self.line_detection() and self.state_counter.get_steps() > 300 / self.norm_speed:
             self.set_state(KartState.LINE_FOLLOWING_AND_ALIGNMENT)
             self.line_alignment.follow_left_side = not self.line_alignment.follow_left_side
@@ -133,30 +156,38 @@ class MarioKart:
         return True
 
     def change_lane_to_right(self):
+        """
+        Change to the right lane.
+        """
         return self.change_lanes(change_to_left=False)
 
     def change_lane_to_left(self):
+        """
+        Change to the left lane.
+        """
         return self.change_lanes(change_to_left=True)
 
     def line_detection(self):
+        """
+        Detect if the robot is on the line based on ground sensor readings.
 
+        :return: True if the line is detected, False otherwise.
+        """
         detections: list[int] = self.ground_sensor_memory.get_average()
-        is_white = [True for detection in detections if detection > self.determine_side.grey_max_value+50]
+        is_white = [True for detection in detections if detection > self.determine_side.grey_max_value + 50]
         if any(is_white):
             #print("detected white: ", detections)
             return True
-        ##for detec in detections:
-        ##    if detec < LINE_MAX_VALUE:
-        ##        self.detected_lines += 1
-        ##if self.detected_lines > 10:
-        ##    self.detected_lines = 0
-        ##    return True
-        ##return False
         return False
 
     ####################################################################################################
 
     def detect_epucks(self):
+        """
+        Detect nearby ePuck robots using proximity sensors.
+
+        :return: True if another ePuck is detected, False otherwise.
+        """
         prox_values = self.robot.get_calibrate_prox()
         av_front_prox = (prox_values[6] + prox_values[7]*2 + prox_values[0]*2 + prox_values[1]) / 4
 
@@ -165,18 +196,30 @@ class MarioKart:
         return False
 
     def detect_end(self):
+        """
+        Detect the end of the track using the time-of-flight sensor.
 
+        :return: True if the end is detected, False otherwise.
+        """
         distance = self.robot.get_tof()
         if distance <= 50:
             return True
         return False
 
     def set_state(self, new_state: KartState):
+        """
+        Set the robot's state and reset the state counter if the state changes.
+
+        :param new_state: The new state to transition to.
+        """
         if new_state != self.current_state:
             self.state_counter.reset()
         self.current_state = new_state
 
     def run(self):
+        """
+        Main loop to run the robot. Initializes the robot and handles state transitions.
+        """
         self.init_robot()
         self.init_line_follower()
 
