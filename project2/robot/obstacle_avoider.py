@@ -1,6 +1,10 @@
 class ObstacleAvoider:
+    """
+    This class is used to avoid obstacles using proximity sensors.
+    """
     def __init__(self, slow_dow_proximity: float, reverse_proximity: float):
         """
+        ObstacleAvoider constructor.
 
         :param slow_dow_proximity: if the proximity is greater than, this, the robot should slow down.
         :param reverse_proximity: if the proximity is greater than this, the robot should reverse.
@@ -9,6 +13,11 @@ class ObstacleAvoider:
         self.reverse_proximity = reverse_proximity
 
     def get_proximity(self, proximity_sensors: list[float])->float:
+        """
+        Get the proximity of the robot based on the proximity sensors.
+        :param proximity_sensors: List of proximity sensors values.
+        :return:
+        """
         left_front_diagonal = proximity_sensors[6]
         left_front = proximity_sensors[7]
         right_front = proximity_sensors[0]
