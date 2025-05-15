@@ -1,5 +1,7 @@
 from unifr_api_epuck import wrapper
 import numpy as np
+from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck, Detected
+
 
 def object_with_largest_area(detections):
     """
@@ -24,7 +26,7 @@ def object_with_largest_area(detections):
     return max_obj  # Return the object with the largest area
 
 
-def block_detector(robot, upperB, lowerB):
+def block_detector(robot: WifiEpuck, upperB, lowerB):
     """
     Detect blocks (red or green) within a specific height range using the robot's camera.
 
@@ -37,7 +39,7 @@ def block_detector(robot, upperB, lowerB):
     img = np.array(robot.get_camera())
 
     # Perform object detection on the captured image
-    detections = robot.get_detection(img)
+    detections: list[Detected] = robot.get_detection(img)
     robot.save_detection()
 
     # Lists to store detected red and green blocks
@@ -46,6 +48,8 @@ def block_detector(robot, upperB, lowerB):
     
     # Filter detections into red and green blocks
     if detections is not None and len(detections) > 0:
+        #detections = [obj for obj in detections if 30 < obj.y_center < 130]
+
         red_blocks = [obj for obj in detections if obj.label == "Red Block"]
         green_blocks = [obj for obj in detections if obj.label == "Green Block"]
 

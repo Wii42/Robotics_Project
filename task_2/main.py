@@ -1,9 +1,13 @@
+import sys
+import os
 from enum import Enum
 
 from typing import Callable
 
 from unifr_api_epuck import wrapper
 import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck
 
@@ -17,7 +21,7 @@ import utils
 from task_2.calibration import normalize_gs
 
 # Constants for robot configuration
-MY_IP = '192.168.2.208'
+MY_IP = '192.168.2.210'
 LINE_MAX_VALUE: int = 600
 GREY_MAX_VALUE: int = 800
 
@@ -33,6 +37,8 @@ class KartState(Enum):
     LINE_FOLLOWING_AND_ALIGNMENT = 0
     CHANGE_LANE_TO_LEFT = 1
     CHANGE_LANE_TO_RIGHT = 2
+    WAIT_FOR_START = 3
+    FINISHED = 4
 
 
 class MarioKart:
@@ -41,7 +47,7 @@ class MarioKart:
     lane changing, and obstacle detection.
     """
 
-    def __init__(self, robot_ip: str, norm_speed: float = 3):
+    def __init__(self, robot_ip: str, norm_speed: float = 3, communicate: bool = True):
         """
         Initialize the MarioKart robot.
 
@@ -57,19 +63,24 @@ class MarioKart:
         self.determine_side: DetermineSide = DetermineSide(GREY_MAX_VALUE, LINE_MAX_VALUE, STEPS_TO_DETERMINE_SIDE)
         self.line_alignment: LineAlignment = LineAlignment()  # Line alignment logic
         self.check_side_necessary: bool = True  # Flag to check if side alignment is needed
-        self.current_state: KartState = KartState.LINE_FOLLOWING_AND_ALIGNMENT  # Initial state
+        self.current_state: KartState = KartState.WAIT_FOR_START if communicate else KartState.LINE_FOLLOWING_AND_ALIGNMENT # Initial state
         self.state_counter = StepCounter()  # Counter for state transitions
+        self.could_be_first: bool = True  # Flag to check if the robot could be the first or if the other robot has already finished
+        self.communicate: bool = communicate  # Flag for communication
 
     def states(self) -> dict[KartState, Callable]:
         return {KartState.LINE_FOLLOWING_AND_ALIGNMENT: self.line_following_and_alignment,
                 KartState.CHANGE_LANE_TO_LEFT: self.change_lane_to_left,
-                KartState.CHANGE_LANE_TO_RIGHT: self.change_lane_to_right}
+                KartState.CHANGE_LANE_TO_RIGHT: self.change_lane_to_right,
+                KartState.WAIT_FOR_START: lambda: True,
+                KartState.FINISHED: self.on_end_detected,
+                }
 
     def init_robot(self):
         """
         Initialize the robot, including sensors, ground calibration, and model loading.
         """
-        self.robot = wrapper.get_robot(MY_IP)
+        self.robot = wrapper.get_robot(self.robot_ip)
         try:
             os.mkdir(OBJECT_DETECTIONS_DIR)  # Create directory for object detections
         except OSError as error:
@@ -78,6 +89,8 @@ class MarioKart:
         self.robot.initiate_model()  # Load the robot's model
         self.robot.init_sensors()  # Initialize other sensors
         self.robot.calibrate_prox()  # Calibrate proximity sensors
+        if self.communicate:
+            self.robot.init_client_communication()
 
     def init_line_follower(self):
         """
@@ -105,11 +118,12 @@ class MarioKart:
         # print()
 
         self.set_state(self.change_lanes_detection())
+        self.while_moving()
+
         return True
 
     def change_lanes_detection(self):
         picture_frequency = 50
-
 
         if self.counter.get_steps() % picture_frequency == 0 and self.state_counter.get_steps() > 30:
             self.robot.init_camera(OBJECT_DETECTIONS_DIR)
@@ -119,11 +133,16 @@ class MarioKart:
             curr_block = utils.block_detector(self.robot, 30, 15)
             self.robot.disable_camera()
 
+        self.set_led_on_detected_block(curr_block)
+
         if curr_block is not None:
-            currSide = self.determine_side.get_probable_side()
+            if  self.line_alignment.follow_left_side :
+                currSide = TrackSide.LEFT
+            else:
+                currSide = TrackSide.RIGHT
             confidence_level = self.determine_side.certainty_of_last_guess
             print("curr block: ", curr_block, " curr side: ", currSide, " confidence: ", confidence_level)
-            if confidence_level >= 0.4:
+            if confidence_level >= 0:
                 if (currSide == TrackSide.LEFT) and (curr_block == "Green Block"):
                     print("change to right")
                     return KartState.CHANGE_LANE_TO_RIGHT
@@ -131,6 +150,14 @@ class MarioKart:
                     print("change to left")
                     return KartState.CHANGE_LANE_TO_LEFT
         return KartState.LINE_FOLLOWING_AND_ALIGNMENT
+
+    def set_led_on_detected_block(self, curr_block):
+        if curr_block is None:
+            self.robot.disable_led(3)
+        elif curr_block == "Red Block":
+            self.robot.enable_led(3, 100, 0, 0)
+        elif curr_block == "Green Block":
+            self.robot.enable_led(3, 0, 100, 0)
 
     def change_lanes(self, change_to_left: bool):
         """
@@ -159,13 +186,17 @@ class MarioKart:
         """
         Change to the right lane.
         """
-        return self.change_lanes(change_to_left=False)
+        self.change_lanes(change_to_left=False)
+        self.while_moving()
+        return True
 
     def change_lane_to_left(self):
         """
         Change to the left lane.
         """
-        return self.change_lanes(change_to_left=True)
+        self.change_lanes(change_to_left=True)
+        self.while_moving()
+        return True
 
     def line_detection(self):
         """
@@ -176,7 +207,7 @@ class MarioKart:
         detections: list[int] = self.ground_sensor_memory.get_average()
         is_white = [True for detection in detections if detection > self.determine_side.grey_max_value + 50]
         if any(is_white):
-            #print("detected white: ", detections)
+            # print("detected white: ", detections)
             return True
         return False
 
@@ -189,11 +220,14 @@ class MarioKart:
         :return: True if another ePuck is detected, False otherwise.
         """
         prox_values = self.robot.get_calibrate_prox()
-        av_front_prox = (prox_values[6] + prox_values[7]*2 + prox_values[0]*2 + prox_values[1]) / 4
+        av_front_prox = (prox_values[6] + prox_values[7] * 2 + prox_values[0] * 2 + prox_values[1]) / 4
 
         if av_front_prox > 150:
+            self.robot.enable_led(0)
             return True
-        return False
+        else:
+            self.robot.disable_led(0)
+            return False
 
     def detect_end(self):
         """
@@ -223,8 +257,6 @@ class MarioKart:
         self.init_robot()
         self.init_line_follower()
 
-        data = self.init_gsensors_record()
-
         print("init complete")
 
         no_error: bool = True
@@ -234,32 +266,54 @@ class MarioKart:
             gs: list[int | float] = self.robot.get_ground()
             gs = normalize_gs(gs, self.robot_ip)
             self.ground_sensor_memory.update_memory(gs)
-            #print(self.determine_side.get_probable_side())
+            # print(self.determine_side.get_probable_side())
             states = self.states()
             no_error = states[self.current_state]()
-
-            if data is not None:
-                self.record_gsensors(data, gs)
-
-            if self.detect_end():
-                print("detected end")
-                break
-
-            if self.detect_epucks():
-                print("detected epuck")
-                self.robot.set_speed(0, 0)
+            #print(self.current_state)
+            if self.communicate:
+                self.listen_for_messages()
 
 
-            self.counter.step()
-            self.state_counter.step()
+
+
 
         self.robot.clean_up()
+
+    def while_moving(self) -> bool:
+        if self.detect_end():
+            if self.current_state != KartState.FINISHED and self.communicate:
+                self.robot.send_msg("goal")
+            self.current_state = KartState.FINISHED
+            print("detected end")
+            return False
+        if self.detect_epucks():
+            print("detected epuck")
+            #self.robot.set_speed(0, 0)
+        if self.line_alignment.follow_left_side:  # left side = led 6
+            self.robot.enable_led(6)
+            self.robot.disable_led(2)
+        else:  # right side = led 2
+            self.robot.enable_led(2)
+            self.robot.disable_led(6)
+        self.counter.step()
+        self.state_counter.step()
+        return True
+
+    def on_end_detected(self):
+        print("detected end")
+        self.robot.set_speed(0, 0)
+        self.robot.enable_led(0)
+        self.robot.enable_led(2)
+        self.robot.enable_led(4)
+        self.robot.enable_led(6)
+        self.robot.enable_body_led()
+        return True
 
     def init_gsensors_record(self):
         data = open("Gsensors.csv", "w")
         if data is None:
             print('Error opening data file!\n')
-            return
+            return None
 
         # write header in CSV file
         data.write('step,')
@@ -275,6 +329,24 @@ class MarioKart:
             data.write(str(v) + ',')
         data.write('\n')
 
+    def listen_for_messages(self):
+        while self.robot.has_receive_msg():
+            msg = self.robot.receive_msg()
+            print(msg)
+            if self.current_state == KartState.WAIT_FOR_START:
+                if msg == "start":
+                    self.current_state = KartState.LINE_FOLLOWING_AND_ALIGNMENT
+            elif not self.current_state == KartState.FINISHED:
+                if msg == "goal":
+                    self.could_be_first = False
+
+
 
 if __name__ == "__main__":
-    MarioKart(MY_IP, norm_speed=3).run()
+    print(len(sys.argv))
+    if len(sys.argv) == 2:
+        ip = sys.argv[1]
+        print("ip: ", ip)
+    else:
+        ip = MY_IP
+    MarioKart(ip, norm_speed=3, communicate=False).run()
