@@ -1,15 +1,26 @@
 from project2.core.beacon import Beacon
 
 
-
 class PositionOnTrack:
+    """"
+    Represents the position of a robot on the track.
+    Specified by the distance from the last beacon, and the beacon it is coming from.
+    """
 
     def __init__(self, distance: float, from_beacon: Beacon | None = None):
+        """
+        PositionOnTrack constructor.
+        :param distance: Distance from the last beacon, in meters.
+        :param from_beacon: Beacon the robot is coming from.
+        """
         self.distance: float = distance
         self.from_beacon: Beacon = from_beacon
 
     def to_dict(self) -> dict[str, float | str | None]:
-
+        """
+        Convert the PositionOnTrack object to a dictionary for serialization.
+        :return: Dictionary representation of the PositionOnTrack object.
+        """
         return {
             "distance": self.distance,
             "from_beacon": self.from_beacon.name if self.from_beacon else None
@@ -21,7 +32,7 @@ class PositionOnTrack:
 
 def position_from_dict(data: dict[str, float | str | None], beacon_list: list[Beacon]) -> PositionOnTrack:
     """
-    Create a PositionOnTrack object from a dictionary.
+    Create a PositionOnTrack object from a dictionary, used in deserialization.
     :param beacon_list: List of beacons to find the from_beacon.
     :param data: Dictionary containing the data to create the object.
     :return: PositionOnTrack object.
@@ -35,10 +46,4 @@ def position_from_dict(data: dict[str, float | str | None], beacon_list: list[Be
                 from_beacon = beacon
                 break
 
-
     return PositionOnTrack(distance, from_beacon)
-
-
-
-
-
