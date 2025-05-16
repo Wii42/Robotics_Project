@@ -15,11 +15,13 @@ echo "First parameter: $PARAM1"
 echo "Second parameter: $PARAM2"
 
 # Start server
-gnome-terminal -- bash -c "python3 -m unifr_api_epuck -g"
+#gnome-terminal -- bash -c "python3 -m unifr_api_epuck -g"
+
+
 
 #start controllers
-gnome-terminal -- bash -c "python3 ./main.py $PARAM1"
-gnome-terminal -- bash -c "python3 ./main.py $PARAM2"
+gnome-terminal -- bash -c "python3 ./race.py $PARAM1"
+gnome-terminal -- bash -c "python3 ./race.py $PARAM2"
 
 #start race_manager
 python3 ./race_manager.py

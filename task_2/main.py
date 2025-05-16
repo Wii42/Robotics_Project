@@ -13,7 +13,7 @@ from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck
 
 from project2.robot.sensor_memory import SensorMemory
 from project2.robot.step_counter import StepCounter
-from project2.robot.track_follower import TrackFollower
+from project2.robot.track_follower import TrackFollower, RobotPosition
 from determine_side import TrackSide
 from determine_side import DetermineSide
 from line_alignment import LineAlignment
@@ -39,6 +39,7 @@ class KartState(Enum):
     CHANGE_LANE_TO_RIGHT = 2
     WAIT_FOR_START = 3
     FINISHED = 4
+    MAYBE_END = 5
 
 
 class MarioKart:
@@ -91,6 +92,7 @@ class MarioKart:
         self.robot.calibrate_prox()  # Calibrate proximity sensors
         if self.communicate:
             self.robot.init_client_communication()
+            print("client communication initialized")
 
     def init_line_follower(self):
         """
@@ -211,6 +213,20 @@ class MarioKart:
             return True
         return False
 
+    def maybe_end(self):
+        """
+        Check if the robot is at the end of the track.
+
+        :return: True if the end is detected, False otherwise.
+        """
+        self.robot.init_camera()
+        if self.state_counter.get_steps() > 1:
+            img = self.robot.get_camera()
+            detections = self.robot.get_detection(img)
+            if self.
+
+        return True
+
     ####################################################################################################
 
     def detect_epucks(self):
@@ -220,7 +236,7 @@ class MarioKart:
         :return: True if another ePuck is detected, False otherwise.
         """
         prox_values = self.robot.get_calibrate_prox()
-        av_front_prox = (prox_values[6] + prox_values[7] * 2 + prox_values[0] * 2 + prox_values[1]) / 4
+        av_front_prox = (prox_values[6] + prox_values[7]*2+ prox_values[0]*2 + prox_values[1]) / 4
 
         if av_front_prox > 150:
             self.robot.enable_led(0)
@@ -236,7 +252,8 @@ class MarioKart:
         :return: True if the end is detected, False otherwise.
         """
         distance = self.robot.get_tof()
-        if distance <= 50:
+        if distance <= 50 and self.line_follower.position == RobotPosition.IS_MIDDLE:
+            self.set_state(KartState.MAYBE_END)
             return True
         return False
 
@@ -283,12 +300,18 @@ class MarioKart:
         if self.detect_end():
             if self.current_state != KartState.FINISHED and self.communicate:
                 self.robot.send_msg("goal")
-            self.current_state = KartState.FINISHED
+            self.set_state(KartState.FINISHED)
             print("detected end")
             return False
         if self.detect_epucks():
             print("detected epuck")
-            #self.robot.set_speed(0, 0)
+            if self.line_follower.position == RobotPosition.IS_MIDDLE:
+                print("overtake")
+                if self.line_alignment.follow_left_side:
+                    self.set_state(KartState.CHANGE_LANE_TO_RIGHT)
+                else:
+                    self.set_state(KartState.CHANGE_LANE_TO_LEFT)
+            self.robot.set_speed(0, 0)
         if self.line_alignment.follow_left_side:  # left side = led 6
             self.robot.enable_led(6)
             self.robot.disable_led(2)
@@ -335,7 +358,7 @@ class MarioKart:
             print(msg)
             if self.current_state == KartState.WAIT_FOR_START:
                 if msg == "start":
-                    self.current_state = KartState.LINE_FOLLOWING_AND_ALIGNMENT
+                    self.set_state(KartState.LINE_FOLLOWING_AND_ALIGNMENT)
             elif not self.current_state == KartState.FINISHED:
                 if msg == "goal":
                     self.could_be_first = False
