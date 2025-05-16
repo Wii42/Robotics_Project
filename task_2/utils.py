@@ -70,3 +70,10 @@ def block_detector(robot: WifiEpuck, upperB, lowerB):
         return obj.label  # Return the label of the detected block
 
     return None  # Return None if no block is detected within the specified range
+
+def sees_epuck(detections):
+    for detection in detections:
+        if detection.label == "Epuck":
+            return True
+    return False
+

@@ -9,7 +9,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck
+from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck, Detected
 
 from project2.robot.sensor_memory import SensorMemory
 from project2.robot.step_counter import StepCounter
@@ -219,14 +219,18 @@ class MarioKart:
 
         :return: True if the end is detected, False otherwise.
         """
-        self.robot.init_camera()
-        if self.state_counter.get_steps() > 1:
+        if self.state_counter.get_steps() == 0:
+            self.robot.init_camera()
+        elif self.state_counter.get_steps() >= 1:
             img = self.robot.get_camera()
-            detections = self.robot.get_detection(img)
-            if self.
+            detections: list[Detected] = self.robot.get_detection(img)
+            if not utils.sees_epuck(detections):
+                self.set_state(KartState.FINISHED)
+            else:
+                self.robot.disable_camera()
+                self.set_state(KartState.LINE_FOLLOWING_AND_ALIGNMENT)
 
         return True
-
     ####################################################################################################
 
     def detect_epucks(self):
