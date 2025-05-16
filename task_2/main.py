@@ -1,5 +1,4 @@
 import sys
-import os
 from enum import Enum
 
 from typing import Callable
@@ -17,7 +16,6 @@ from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck, Detected, ColorDetected
 from project2.robot.sensor_memory import SensorMemory
 from project2.robot.step_counter import StepCounter
 from project2.robot.track_follower import TrackFollower, RobotPosition
-from determine_side import TrackSide
 from determine_side import DetermineSide
 from line_alignment import LineAlignment
 import utils
@@ -43,6 +41,13 @@ class KartState(Enum):
     WAIT_FOR_START = 3
     FINISHED = 4
     MAYBE_END = 5
+
+
+def create_dir_for_detections():
+    try:
+        os.mkdir(OBJECT_DETECTIONS_DIR)  # Create directory for object detections
+    except OSError as error:
+        print(error)
 
 
 class MarioKart:
@@ -87,10 +92,7 @@ class MarioKart:
         Initialize the robot, including sensors, ground calibration, and model loading.
         """
         self.robot = wrapper.get_robot(self.robot_ip)
-        try:
-            os.mkdir(OBJECT_DETECTIONS_DIR)  # Create directory for object detections
-        except OSError as error:
-            print(error)
+        create_dir_for_detections()
         self.robot.init_ground()  # Initialize ground sensors
         self.robot.initiate_model()  # Load the robot's model
         self.robot.init_sensors()  # Initialize other sensors
@@ -105,6 +107,9 @@ class MarioKart:
         to be considered black. Should only be called after the robot is initialized.
         """
         self.line_follower: TrackFollower = TrackFollower(self.robot, self.norm_speed, LINE_MAX_VALUE)
+
+    #######################################################################
+    # State behaviours
 
     def line_following_and_alignment(self):
 
@@ -121,8 +126,6 @@ class MarioKart:
             return False
         self.determine_side.determine_side(self.ground_sensor_memory.get_average(), self.line_follower.position,
                                            invert_side=self.line_alignment.get_follow_left_side())
-        # print(determine_side.get_probable_side())
-        # print()
 
         self.set_state(self.change_lanes_detection())
         self.while_moving()
@@ -137,32 +140,28 @@ class MarioKart:
 
         curr_block = None
         if self.counter.get_steps() % picture_frequency == 1 and self.state_counter.get_steps() >= STEPS_TO_DETERMINE_SIDE:
-            curr_block = utils.block_detector(self.robot, 30, 15)
+            curr_block = utils.detect_block(self.robot, 30, 15)
             self.robot.disable_camera()
 
         led.set_led_on_block(self.robot, curr_block)
 
         if curr_block is not None:
-            if self.line_alignment.follow_left_side:
-                curr_side = TrackSide.LEFT
-            else:
-                curr_side = TrackSide.RIGHT
-            confidence_level = self.determine_side.certainty_of_last_guess
-            print("curr block: ", curr_block, " curr side: ", curr_side, " confidence: ", confidence_level)
-            if confidence_level >= 0:
-                if (curr_side == TrackSide.LEFT) and (curr_block == "Green Block"):
-                    print("change to right")
-                    return KartState.CHANGE_LANE_TO_RIGHT
-                if (curr_side == TrackSide.RIGHT) and (curr_block == "Red Block"):
-                    print("change to left")
-                    return KartState.CHANGE_LANE_TO_LEFT
-        return KartState.LINE_FOLLOWING_AND_ALIGNMENT
+            is_left: bool = self.line_alignment.follow_left_side
 
+            if is_left and (curr_block == "Green Block"):
+                print("change to right")
+                return KartState.CHANGE_LANE_TO_RIGHT
+            if not is_left and (curr_block == "Red Block"):
+                print("change to left")
+                return KartState.CHANGE_LANE_TO_LEFT
+        return self.current_state
 
     def change_lanes(self, change_to_left: bool):
         """
         Handle the lane-changing process.
+        This method adjusts the robot's speed and checks for line detection to complete the lane change.
 
+        Turns the robot to the left or right lane based on the provided parameter, then drive straight until the other line is detected.
         :param change_to_left: True if changing to the left lane, False otherwise.
         :return: True if the lane change is complete.
         """
@@ -201,15 +200,13 @@ class MarioKart:
 
     def line_detection(self, gs: list[int]) -> bool:
         """
-        Detect if the robot is on the line based on ground sensor readings.
+        Detect the other line using the ground sensors.
+        The other line si considered detected if at least one sensor detects the white ground on the other side of the line
 
         :return: True if the line is detected, False otherwise.
         """
         is_white = [True for sensor in gs if sensor > self.determine_side.grey_max_value + 50]
-        if any(is_white):
-            # print("detected white: ", detections)
-            return True
-        return False
+        return any(is_white)
 
     def maybe_end(self):
         """
@@ -219,7 +216,7 @@ class MarioKart:
         """
 
         if self.state_counter.get_steps() == 0:
-            self.robot.init_camera()
+            self.robot.init_camera(OBJECT_DETECTIONS_DIR)
             return False
         elif self.state_counter.get_steps() >= 1:
             img = np.array(self.robot.get_camera())

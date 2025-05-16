@@ -8,6 +8,7 @@ def set_leds_on_goal(robot: WifiEpuck):
     robot.enable_led(6)
     robot.enable_body_led()
 
+
 def set_led_on_block(robot: WifiEpuck, block: str | None):
     if block is None:
         robot.disable_led(3)
@@ -16,11 +17,13 @@ def set_led_on_block(robot: WifiEpuck, block: str | None):
     elif block == "Green Block":
         robot.enable_led(3, 0, 100, 0)
 
+
 def set_led_on_epuck(robot: WifiEpuck, has_detected: bool):
     if has_detected:
         robot.enable_led(0)
     else:
         robot.disable_led(0)
+
 
 def set_led_on_side(robot: WifiEpuck, follows_left_side: bool):
     if follows_left_side:  # left side = led 6

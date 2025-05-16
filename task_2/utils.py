@@ -26,7 +26,7 @@ def object_with_largest_area(detections):
     return max_obj  # Return the object with the largest area
 
 
-def block_detector(robot: WifiEpuck, upperB, lowerB):
+def detect_block(robot: WifiEpuck, upperB, lowerB):
     """
     Detect blocks (red or green) within a specific height range using the robot's camera.
 
