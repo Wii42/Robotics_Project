@@ -5,11 +5,12 @@ from enum import Enum
 from typing import Callable
 
 from unifr_api_epuck import wrapper
+import numpy as np
 import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck, Detected
+from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck, Detected, ColorDetected
 
 from project2.robot.sensor_memory import SensorMemory
 from project2.robot.step_counter import StepCounter
@@ -65,6 +66,7 @@ class MarioKart:
         self.line_alignment: LineAlignment = LineAlignment()  # Line alignment logic
         self.check_side_necessary: bool = True  # Flag to check if side alignment is needed
         self.current_state: KartState = KartState.WAIT_FOR_START if communicate else KartState.LINE_FOLLOWING_AND_ALIGNMENT # Initial state
+        self.old_state: KartState | None = None
         self.state_counter = StepCounter()  # Counter for state transitions
         self.could_be_first: bool = True  # Flag to check if the robot could be the first or if the other robot has already finished
         self.communicate: bool = communicate  # Flag for communication
@@ -75,6 +77,7 @@ class MarioKart:
                 KartState.CHANGE_LANE_TO_RIGHT: self.change_lane_to_right,
                 KartState.WAIT_FOR_START: lambda: True,
                 KartState.FINISHED: self.on_end_detected,
+                KartState.MAYBE_END: self.maybe_end,
                 }
 
     def init_robot(self):
@@ -219,17 +222,27 @@ class MarioKart:
 
         :return: True if the end is detected, False otherwise.
         """
+
         if self.state_counter.get_steps() == 0:
             self.robot.init_camera()
+            return False
         elif self.state_counter.get_steps() >= 1:
-            img = self.robot.get_camera()
-            detections: list[Detected] = self.robot.get_detection(img)
-            if not utils.sees_epuck(detections):
+            img = np.array(self.robot.get_camera())
+            detections: list[ColorDetected] = self.robot.get_colordetection(img, saveimg = True, savemasks = True)
+            sum_area = 0
+            for detection in detections:
+                print(detection.label, detection.area)
+                sum_area+= detection.area
+
+            print("sum_area: ", sum_area)
+
+            if 1000>sum_area:
+                if self.current_state != KartState.FINISHED and self.communicate:
+                    self.robot.send_msg("goal")
                 self.set_state(KartState.FINISHED)
             else:
                 self.robot.disable_camera()
-                self.set_state(KartState.LINE_FOLLOWING_AND_ALIGNMENT)
-
+                self.set_state(self.old_state)
         return True
     ####################################################################################################
 
@@ -256,9 +269,12 @@ class MarioKart:
         :return: True if the end is detected, False otherwise.
         """
         distance = self.robot.get_tof()
-        if distance <= 50 and self.line_follower.position == RobotPosition.IS_MIDDLE:
+        print("distance: ", distance)
+
+        if distance <= 50:
             self.set_state(KartState.MAYBE_END)
-            return True
+
+            return False
         return False
 
     def set_state(self, new_state: KartState):
@@ -269,6 +285,7 @@ class MarioKart:
         """
         if new_state != self.current_state:
             self.state_counter.reset()
+            self.old_state = self.current_state
         self.current_state = new_state
 
     def run(self):
@@ -301,16 +318,11 @@ class MarioKart:
         self.robot.clean_up()
 
     def while_moving(self) -> bool:
-        if self.detect_end():
-            if self.current_state != KartState.FINISHED and self.communicate:
-                self.robot.send_msg("goal")
-            self.set_state(KartState.FINISHED)
-            print("detected end")
-            return False
+        self.detect_end()
         if self.detect_epucks():
-            print("detected epuck")
+            #print("detected epuck")
             if self.line_follower.position == RobotPosition.IS_MIDDLE:
-                print("overtake")
+                #print("overtake")
                 if self.line_alignment.follow_left_side:
                     self.set_state(KartState.CHANGE_LANE_TO_RIGHT)
                 else:
