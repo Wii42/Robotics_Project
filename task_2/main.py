@@ -11,11 +11,11 @@ import task_2.led_indicators as led
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck, Detected, ColorDetected
+from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck, ColorDetected
 
 from project2.robot.sensor_memory import SensorMemory
 from project2.robot.step_counter import StepCounter
-from project2.robot.track_follower import TrackFollower, RobotPosition
+from project2.robot.track_follower import TrackFollower
 from determine_side import DetermineSide
 from line_alignment import LineAlignment
 import utils
@@ -305,11 +305,6 @@ class MarioKart:
     def while_moving(self) -> bool:
         self.detect_end()
         if self.detect_epucks():
-            if self.line_follower.position == RobotPosition.IS_MIDDLE:
-                if self.line_alignment.follow_left_side:
-                    self.set_state(KartState.CHANGE_LANE_TO_RIGHT)
-                else:
-                    self.set_state(KartState.CHANGE_LANE_TO_LEFT)
             self.robot.set_speed(0, 0)
         led.set_led_on_side(self.robot, self.line_alignment.follow_left_side)
         self.counter.step()
