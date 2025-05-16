@@ -1,12 +1,36 @@
+"""
+Track Visualization GUI
+
+This script provides a graphical user interface (GUI) for visualizing the positions of robots and beacons on a track.
+It uses pygame to render the track, beacons, and robots, and updates robot positions in real time based on messages
+received via a queue from the coordinator.
+
+Authors:
+    @Lukas Künzi
+    @Thirith Yang
+
+Date:
+    18 May 2025
+"""
+
 import pygame
 import queue
-
 
 from project2.core.beacon import Beacon
 from project2.core.position_on_track import position_from_dict
 
 
 def main(state_queue: queue.Queue, beacons: list[Beacon]):
+    """
+    Main function to run the track visualization GUI.
+
+    Parameters
+    ----------
+    state_queue : queue.Queue
+        Queue from which robot position updates are received.
+    beacons : list[Beacon]
+        List of Beacon objects representing the track layout.
+    """
     # Pygame-Setup
     pygame.init()
     WIDTH, HEIGHT = 800, 600
@@ -23,6 +47,7 @@ def main(state_queue: queue.Queue, beacons: list[Beacon]):
     pygame.display.set_caption("Track Visualisierung")
     clock = pygame.time.Clock()
 
+    # Load and transform the background image of the track
     background_image = pygame.image.load("Track_test.jpg")
     background_image = pygame.transform.rotate(background_image, 90)
     background_image = pygame.transform.scale(background_image, (WIDTH * 0.9, HEIGHT * 0.9))
@@ -32,7 +57,8 @@ def main(state_queue: queue.Queue, beacons: list[Beacon]):
 
     # Main loop
     running = True
-    robot_position: dict[str, list[int]] = {}  # Initial positions
+    robot_position: dict[str, list[int]] = {}  # Stores the current positions of robots
+
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -42,7 +68,7 @@ def main(state_queue: queue.Queue, beacons: list[Beacon]):
         screen.fill(WHITE)
         screen.blit(background_image, (WIDTH * 0.05, HEIGHT * 0.05))
 
-        # Draw beacons
+        # Draw beacons as red circles
         for beacon in beacons:
             pygame.draw.circle(screen, RED, (int(beacon.x), int(beacon.y)), 10)
 

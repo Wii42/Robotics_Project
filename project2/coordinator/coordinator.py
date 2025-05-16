@@ -1,3 +1,18 @@
+"""
+Coordinator Module
+
+This module provides the Coordinator class, which manages a group of robots on a track,
+ensuring they maintain optimal distances from each other by communicating with their controllers
+and adjusting their speeds as necessary. The Coordinator also interfaces with a GUI via a queue.
+
+Authors:
+    @Lukas Künzi
+    @Thirith Yang
+
+Date:
+    18 May 2025
+"""
+
 import math
 import subprocess
 import sys
@@ -12,10 +27,11 @@ from project2.coordinator.distance_calculator import compute_distance
 from project2.core.position_on_track import PositionOnTrack, position_from_dict
 from project2.coordinator.speed_adjustor import SpeedAdjustor
 
-BEACONS: dict[int, Beacon] = {1: Beacon("beacon1", 360, 540, math.pi),
-                              2: Beacon("beacon2", 510, 50, 0),
-                              }
-
+# Define the beacons on the track and their relationships
+BEACONS: dict[int, Beacon] = {
+    1: Beacon("beacon1", 360, 540, math.pi),
+    2: Beacon("beacon2", 510, 50, 0),
+}
 BEACONS[1].next_beacon = (BEACONS[2], 0.74)
 BEACONS[2].next_beacon = (BEACONS[1], 0.65)
 
@@ -24,64 +40,68 @@ COORDINATOR_ID: str = 'coordinator'
 
 class Coordinator:
     """
-    Coordinates a group of robots and manages their communication and positioning.
+    Coordinates a group of robots, manages their communication, and ensures they maintain
+    optimal distances on the track.
 
     Attributes
     ----------
     robots : list[str]
-        List of the IP addresses of the robots which should be used.
+        List of the IP addresses of the robots to be coordinated.
 
     state_queue : queue.Queue
         Queue to send information to an attached GUI across threads.
 
     optimal_distance : float
-        Distance the robots should keep from each other, in meters.
+        Distance (in meters) the robots should keep from each other.
 
     client : SocketClientCommunication | None
-        Communication client to communicate with the robo controllers. Set up during runtime if required.
+        Communication client for interacting with robot controllers.
 
     speed_adjustor : SpeedAdjustor | None
-        Determines by what factor a robot has to adjust its speed to keep the optimal distance
-        to the next robot, and sends it to the robot.
+        Determines and sends speed adjustment factors to robots to maintain optimal distance.
 
     robot_positions_on_track : dict[str, PositionOnTrack]
-        Storing the positions of the robots on the track. The keys are the robot IDs, and the
-        values are PositionOnTrack objects.
+        Stores the positions of the robots on the track. Keys are robot IDs, values are PositionOnTrack objects.
     """
 
     def __init__(self, robots: list[str], state_queue: queue.Queue = None, optimal_distance: float = 0.6):
         """
         Coordinator constructor.
-        :param robots: List of the ip addresses of the robots which should be used.
-        :param state_queue: Queue to send information to an attached gui across threads.
-        :param optimal_distance: Distance the robots should keep from each other, in meters
+
+        Parameters
+        ----------
+        robots : list[str]
+            List of the IP addresses of the robots to be coordinated.
+        state_queue : queue.Queue, optional
+            Queue to send information to an attached GUI across threads.
+        optimal_distance : float, optional
+            Distance (in meters) the robots should keep from each other (default is 0.6).
         """
         self.robots: list[str] = robots
         self.state_queue: queue.Queue = state_queue
         self.client: SocketClientCommunication | None = None
-        self.speed_adjustor: SpeedAdjustor | None = None  # dependent on client
+        self.speed_adjustor: SpeedAdjustor | None = None  # Will be initialized after client
         self.robot_positions_on_track: dict[str, PositionOnTrack] = {}
         self.optimal_distance: float = optimal_distance
 
     def init_client(self):
         """
-        Initializes the client to communicate with the robot controllers.
-        :return: None
+        Initializes the client for communication with robot controllers.
         """
         self.client = wrapper.get_client(client_id=COORDINATOR_ID, host_ip='http://127.0.0.1:8000')
 
     def init_speed_adjustor(self):
         """
-        Initializes the speed adjustor to determine the speed factor for each robot. init_client() has to be called before.
-        :return: None
+        Initializes the speed adjustor to determine the speed factor for each robot.
+        Must be called after init_client().
         """
         self.speed_adjustor: SpeedAdjustor = SpeedAdjustor(self.client, self.optimal_distance)
 
     def run(self):
         """
         Main loop of the coordinator. Initializes the client and speed adjustor, starts the robots,
-        and handles incoming messages from the robots, updating their positions and calculating distances.
-        :return: None
+        and continuously handles incoming messages from the robots, updating their positions and
+        calculating distances.
         """
         self.init_client()
         self.init_speed_adjustor()
@@ -92,10 +112,9 @@ class Coordinator:
 
     def handle_incoming_message(self):
         """
-        Handles incoming messages from the robots. Updates their positions and calculates distances,
-        and sends the appropriate speed factor tho the robots so the keep the optimal distance.
-        Forwards all messages to the GUI.
-        :return: None
+        Handles incoming messages from the robots. Updates their positions, calculates distances,
+        and sends the appropriate speed factor to the robots to maintain the optimal distance.
+        Forwards all messages to the GUI via the state_queue.
         """
         if self.client.has_receive_msg():
             msg = self.client.receive_msg()
@@ -109,17 +128,18 @@ class Coordinator:
     def start_robots(self):
         """
         Starts the robot controllers in separate processes.
-        :return: None
         """
         for robot in self.robots:
-            subprocess.Popen(['python3', 'robot/robot_controller.py', robot], shell=False,
-                             stdout=sys.stdout,
-                             stderr=sys.stdout)
+            subprocess.Popen(
+                ['python3', 'robot/robot_controller.py', robot],
+                shell=False,
+                stdout=sys.stdout,
+                stderr=sys.stdout
+            )
 
     def calculate_all_robot_distances(self):
         """
         Calculates the distances between all robots and sends the appropriate speed factor to each robot.
-        :return: None
         """
         robots = list(self.robot_positions_on_track.keys())
         robot_pairs = [(x, y) for x in robots for y in robots if x != y]
