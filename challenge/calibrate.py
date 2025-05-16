@@ -14,7 +14,7 @@ Date:
 """
 
 import sys
-from project2.robot.robot_controller import RobotController
+from challenge.robot.robot_controller import RobotController
 
 if __name__ == '__main__':
     # Check if an IP address was provided as a command-line argument

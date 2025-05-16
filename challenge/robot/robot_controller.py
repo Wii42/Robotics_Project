@@ -4,16 +4,18 @@ import sys, signal
 
 from unifr_api_epuck import wrapper
 
-from project2.core.beacon import Beacon
-from project2.robot.beacon_detector import BeaconDetector
-from project2.coordinator import coordinator
-from project2.robot.grey_area import GreyArea
-from project2.robot.obstacle_avoider import ObstacleAvoider
-from project2.robot.odometry import Odometry
-from project2.core.position_on_track import PositionOnTrack
-from project2.robot.sensor_memory import SensorMemory
-from project2.robot.step_counter import StepCounter
-from project2.robot.track_follower import TrackFollower
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
+from challenge.core.beacon import Beacon
+from challenge.robot.beacon_detector import BeaconDetector
+from challenge.coordinator import coordinator
+from challenge.robot.grey_area import GreyArea
+from challenge.robot.obstacle_avoider import ObstacleAvoider
+from challenge.robot.odometry import Odometry
+from challenge.core.position_on_track import PositionOnTrack
+from challenge.robot.sensor_memory import SensorMemory
+from challenge.robot.step_counter import StepCounter
+from challenge.robot.track_follower import TrackFollower
 
 LINE_MAX: int = 750  # to determine if the sensor is on the line
 

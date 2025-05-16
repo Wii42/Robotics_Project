@@ -20,12 +20,12 @@ import sys
 from unifr_api_epuck import wrapper
 from unifr_api_epuck.communication.socket_client_communication import SocketClientCommunication
 
-from project2.core.beacon import Beacon
+from challenge.core.beacon import Beacon
 import queue
 
-from project2.coordinator.distance_calculator import compute_distance
-from project2.core.position_on_track import PositionOnTrack, position_from_dict
-from project2.coordinator.speed_adjustor import SpeedAdjustor
+from challenge.coordinator.distance_calculator import compute_distance
+from challenge.core.position_on_track import PositionOnTrack, position_from_dict
+from challenge.coordinator.speed_adjustor import SpeedAdjustor
 
 # Define the beacons on the track and their relationships
 BEACONS: dict[int, Beacon] = {

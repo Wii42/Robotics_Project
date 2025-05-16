@@ -16,8 +16,8 @@ Date:
 import pygame
 import queue
 
-from project2.core.beacon import Beacon
-from project2.core.position_on_track import position_from_dict
+from challenge.core.beacon import Beacon
+from challenge.core.position_on_track import position_from_dict
 
 
 def main(state_queue: queue.Queue, beacons: list[Beacon]):

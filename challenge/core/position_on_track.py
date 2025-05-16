@@ -13,7 +13,7 @@ Date:
     18 May 2025
 """
 
-from project2.core.beacon import Beacon
+from challenge.core.beacon import Beacon
 
 
 class PositionOnTrack:

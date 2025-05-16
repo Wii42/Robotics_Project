@@ -1,7 +1,7 @@
 
 
-from project2.core.beacon import Beacon
-from project2.robot.grey_area import GreyArea
+from challenge.core.beacon import Beacon
+from challenge.robot.grey_area import GreyArea
 
 
 class BeaconDetector:

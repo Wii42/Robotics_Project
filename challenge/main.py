@@ -12,12 +12,15 @@ Authors:
 Date:
     18 May 2025
 """
-
+import os
 import queue
+import sys
 import threading
 
-import gui
-from project2.coordinator import coordinator
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+import challenge.gui as gui
+from challenge.coordinator import coordinator
 
 # List of robot IP addresses to be managed by the coordinator
 ROBOTS: list[str] = ['192.168.2.216', '192.168.2.208']

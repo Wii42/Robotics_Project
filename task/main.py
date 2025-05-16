@@ -7,19 +7,19 @@ from unifr_api_epuck import wrapper
 import numpy as np
 import os
 
-import task_2.led_indicators as led
+import task.led_indicators as led
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck, ColorDetected
 
-from project2.robot.sensor_memory import SensorMemory
-from project2.robot.step_counter import StepCounter
-from project2.robot.track_follower import TrackFollower
+from challenge.robot.sensor_memory import SensorMemory
+from challenge.robot.step_counter import StepCounter
+from challenge.robot.track_follower import TrackFollower
 from determine_side import DetermineSide
 from line_alignment import LineAlignment
 import utils
-from task_2.calibration import normalize_gs
+from task.calibration import normalize_gs
 
 # Constants for robot configuration
 MY_IP = '192.168.2.210'

@@ -13,7 +13,7 @@ Date:
     18 May 2025
 """
 
-from project2.core.position_on_track import PositionOnTrack
+from challenge.core.position_on_track import PositionOnTrack
 
 
 def compute_distance(rear_robot: PositionOnTrack, front_robot: PositionOnTrack) -> float | None:
