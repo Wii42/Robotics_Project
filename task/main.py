@@ -1,3 +1,42 @@
+"""
+main.py
+
+MarioKart e-puck Robot Control Script
+
+This script implements the main control logic for an autonomous e-puck robot designed for a MarioKart-inspired robotics project.
+It manages the robot's state machine, including line following, lane changing, obstacle and block detection, and end-of-track detection.
+The MarioKart class encapsulates all robot behaviors and state transitions, providing a robust framework for autonomous navigation and interaction with the environment.
+
+Modules & Classes:
+------------------
+- KartState (Enum): Represents the different operational states of the robot.
+- MarioKart: Main class for controlling the robot's behavior and state transitions.
+
+Key Features:
+-------------
+- Line following and alignment using ground sensors.
+- Lane changing based on detected colored blocks.
+- Obstacle and e-puck detection using proximity sensors.
+- End-of-track detection using camera and time-of-flight sensors.
+- Communication support for multi-robot coordination.
+
+Usage:
+------
+Run this script as the main entry point. Optionally, provide the robot's IP address as a command-line argument.
+
+Example:
+    python main.py 192.168.2.210
+
+Authors:
+--------
+- Lukas Künzi
+- Thirith Yang
+
+Date:
+------
+18th May 2025
+"""
+
 import sys
 from enum import Enum
 
@@ -62,6 +101,7 @@ class MarioKart:
 
         :param robot_ip: The IP address of the robot.
         :param norm_speed: The normal speed of the robot.
+        :param communicate: Enable communication with race manager and other robots.
         """
         self.robot_ip: str = robot_ip
         self.norm_speed: float = norm_speed
@@ -79,6 +119,9 @@ class MarioKart:
         self.communicate: bool = communicate  # Flag for communication
 
     def states(self) -> dict[KartState, Callable]:
+        """
+        Returns a dictionary mapping each KartState to its corresponding handler function.
+        """
         return {KartState.LINE_FOLLOWING_AND_ALIGNMENT: self.line_following_and_alignment,
                 KartState.CHANGE_LANE_TO_LEFT: self.change_lane_to_left,
                 KartState.CHANGE_LANE_TO_RIGHT: self.change_lane_to_right,
@@ -112,6 +155,10 @@ class MarioKart:
     # State behaviours
 
     def line_following_and_alignment(self):
+        """
+        Handles the main line following and alignment logic.
+        Adjusts alignment if necessary and follows the track using the line follower.
+        """
 
         if self.state_counter.get_steps() > STEPS_TO_DETERMINE_SIDE and self.check_side_necessary:
             self.line_alignment.check_line_alignment(self.determine_side.get_probable_side())
@@ -133,6 +180,10 @@ class MarioKart:
         return True
 
     def change_lanes_detection(self):
+        """
+        Detects if a lane change is necessary based on block detection.
+        Returns the next state depending on detected block color and current alignment.
+        """
         picture_frequency = 50
 
         if self.counter.get_steps() % picture_frequency == 0 and self.state_counter.get_steps() > 30:
@@ -161,10 +212,11 @@ class MarioKart:
         Handle the lane-changing process.
         This method adjusts the robot's speed and checks for line detection to complete the lane change.
 
-        Turns the robot to the left or right lane based on the provided parameter, then drive straight until the other line is detected.
+        Turns the robot to the left or right lane based on the provided parameter, then drives straight until the other line is detected.
         :param change_to_left: True if changing to the left lane, False otherwise.
         :return: True if the lane change is complete.
         """
+
         # Adjust speed for lane change
         if self.state_counter.get_steps() < 100 / self.norm_speed:
             speeds = [self.norm_speed * 2, self.norm_speed * 0.5]
@@ -201,16 +253,17 @@ class MarioKart:
     def line_detection(self, gs: list[int]) -> bool:
         """
         Detect the other line using the ground sensors.
-        The other line si considered detected if at least one sensor detects the white ground on the other side of the line
+        The other line is considered detected if at least one sensor detects the white ground on the other side of the line.
 
         :return: True if the line is detected, False otherwise.
         """
+
         is_white = [True for sensor in gs if sensor > self.determine_side.grey_max_value + 50]
         return any(is_white)
 
     def maybe_end(self):
         """
-        Check if the robot is at the end of the track.
+        Check if the robot is at the end of the track using camera and color detection.
 
         :return: True if the end is detected, False otherwise.
         """
@@ -303,6 +356,10 @@ class MarioKart:
         self.robot.clean_up()
 
     def while_moving(self) -> bool:
+        """
+        Called while the robot is moving. Handles end detection, ePuck detection, LED updates, and step counting.
+        """
+
         self.detect_end()
         if self.detect_epucks():
             self.robot.set_speed(0, 0)
@@ -312,12 +369,18 @@ class MarioKart:
         return True
 
     def on_end_detected(self):
+        """
+        Called when the end of the track is detected. Stops the robot and activates goal LEDs.
+        """
         print("detected end")
         self.robot.set_speed(0, 0)
         led.set_leds_on_goal(self.robot)
         return True
 
     def listen_for_messages(self):
+        """
+        Listen for incoming messages from other robots or the race manager and handle state transitions accordingly.
+        """
         while self.robot.has_receive_msg():
             msg = self.robot.receive_msg()
             print(msg)
@@ -330,6 +393,7 @@ class MarioKart:
 
 
 if __name__ == "__main__":
+    # Entry point for running the MarioKart robot.
     print(len(sys.argv))
     if len(sys.argv) == 2:
         ip = sys.argv[1]

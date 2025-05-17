@@ -1,3 +1,19 @@
+"""
+test.py
+
+This script demonstrates basic robot control and step counting for the ePuck robot.
+It initializes the robot, sets up a step counter, and moves the robot forward while
+printing the current step count at each iteration. The script is intended for testing
+basic movement and integration of the step counting functionality.
+
+Authors:
+    Lukas Künzi
+    Thirith Yang
+
+Date:
+    18th May 2025
+"""
+
 from unifr_api_epuck import wrapper
 from step_counter import StepCounter
 from track_follower import TrackFollower
@@ -10,7 +26,7 @@ import time
 
 # Constants for robot configuration
 MY_IP = '192.168.2.211'  # IP address of the robot
-LINE_MAX_VALUE = 500  # Maximum value for the line to be considered black
+LINE_MAX_VALUE = 500     # Maximum value for the line to be considered black
 STEPS_TO_DETERMINE_SIDE = 20  # Number of steps to determine the side
 
 def main():

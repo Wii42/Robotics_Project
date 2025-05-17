@@ -1,3 +1,17 @@
+"""
+robot_controller.py
+
+Main controller for the ePuck robot, managing all modules such as obstacle avoidance,
+track following, odometry, beacon detection, and communication with the coordinator.
+
+Authors:
+    @Lukas Künzi
+    @Thirith Yang
+
+Date:
+    18 May 2025
+"""
+
 import json
 import os
 import sys, signal
@@ -18,7 +32,6 @@ from challenge.robot.step_counter import StepCounter
 from challenge.robot.track_follower import TrackFollower
 
 LINE_MAX: int = 750  # to determine if the sensor is on the line
-
 GREY_MIN: int = 500  # to determine if the sensor is on the grey area
 
 
@@ -43,9 +56,11 @@ class RobotController:
 
     def __init__(self, robot_ip: str, norm_speed: float = 1):
         """
-        RobotController constructor.
-        :param robot_ip: IP address of the robot.
-        :param norm_speed: The robot's default movement speed. Defaults to 1.
+        Initialize the RobotController and all required modules.
+
+        Args:
+            robot_ip (str): IP address of the robot.
+            norm_speed (float): The robot's default movement speed. Defaults to 1.
         """
         self.norm_speed = norm_speed
         self.robot = wrapper.get_robot(robot_ip)
@@ -66,8 +81,11 @@ class RobotController:
 
     def run(self):
         """
-        Main loop for the robot controller.
-        :return: None
+        Main loop for the robot controller. Initializes modules, calibrates, and runs the robot's logic loop.
+        Handles sensor reading, obstacle avoidance, beacon detection, and communication.
+
+        Returns:
+            None
         """
         self.init_track_follower_odometry()
         self.odometry.calibrate_robot()
@@ -102,7 +120,10 @@ class RobotController:
     def calibrate_robot(self):
         """
         Calibrate the robot by following the track and detecting beacons.
-        :return: None
+        Used to collect calibration data for odometry correction.
+
+        Returns:
+            None
         """
         self.init_track_follower_odometry()
         print("calibrating robot")
@@ -123,22 +144,25 @@ class RobotController:
 
     def init_track_follower_odometry(self):
         """
-        Initializes the track follower and odometry modules.
-        :return: None
+        Initializes the track follower, odometry, beacon detector, and related modules.
+
+        Returns:
+            None
         """
         self.robot.init_ground()
         self.step_counter: StepCounter = StepCounter()
         self.grey_area: GreyArea = GreyArea(self.norm_speed)
-        self.beacon_detector: BeaconDetector = BeaconDetector(self.norm_speed, self.grey_area, GREY_MIN, LINE_MAX,
-                                                              coordinator.BEACONS,
-                                                              self.step_counter)
+        self.beacon_detector: BeaconDetector = BeaconDetector(self.grey_area, GREY_MIN, LINE_MAX,
+                                                              coordinator.BEACONS)
         self.track_follower: TrackFollower = TrackFollower(self.robot, self.norm_speed, LINE_MAX)
         self.odometry: Odometry = Odometry(self.robot, self.step_counter)
 
     def adjust_speed_to_possible_obstacle(self):
         """
         Adjusts the robot's speed based on the proximity sensor data, so it stops in front of an obstacle.
-        :return: None
+
+        Returns:
+            None
         """
         self.track_follower.obstacle_speed_factor = self.obstacle_avoider.calc_speed(
             self.proximity_memory.get_average())
@@ -146,7 +170,9 @@ class RobotController:
     def notify_coordinator_of_position(self):
         """
         Periodically notify the coordinator of the robot's probable position and orientation.
-        :return: None
+
+        Returns:
+            None
         """
         if self.step_counter.get_steps() % 20 == 0:
             self.send_pos([self.odometry.x, self.odometry.y], self.odometry.position_from_beacon)
@@ -154,9 +180,13 @@ class RobotController:
     def send_pos(self, robot_position: list[float], position_on_track: PositionOnTrack):
         """
         Send the robot's position and orientation to the coordinator.
-        :param robot_position: The robot's position in the form of [x, y].
-        :param position_on_track: The robot's position on the track as a PositionOnTrack object.
-        :return: None
+
+        Args:
+            robot_position (list[float]): The robot's position in the form of [x, y].
+            position_on_track (PositionOnTrack): The robot's position on the track as a PositionOnTrack object.
+
+        Returns:
+            None
         """
         self.robot.ClientCommunication.send_msg_to(coordinator.COORDINATOR_ID,
                                                    {"robot_id": self.robot.id, "robot_position": robot_position.copy(),
@@ -164,9 +194,14 @@ class RobotController:
 
     def check_for_beacons(self, save_to_file: bool = False):
         """
-        Check if a new beacon has been detected.
-        :param save_to_file: If True, save the calibration data to a file.
-        :return: None
+        Check if a new beacon has been detected and synchronize odometry if so.
+        Optionally save calibration data.
+
+        Args:
+            save_to_file (bool): If True, save the calibration data to a file.
+
+        Returns:
+            None
         """
         if self.beacon_detector.new_beacon_found():
             print(f"[{self.robot.id.split('_')[-1]}] found beacon: {self.beacon_detector.last_beacon.name}")
@@ -176,11 +211,14 @@ class RobotController:
 
     def save_calibration(self, odometry: Odometry):
         """
-        Save the calibration data to a file.
-        :param odometry: The odometry object containing the robot's position and orientation.
-        :return: None
-        """
+        Save the calibration data to a file if a beacon transition is detected.
 
+        Args:
+            odometry (Odometry): The odometry object containing the robot's position and orientation.
+
+        Returns:
+            None
+        """
         position_from_beacon = odometry.position_from_beacon
         if position_from_beacon.from_beacon is not None:
             if self.beacon_detector.last_beacon == position_from_beacon.from_beacon.next_beacon[0]:
@@ -188,8 +226,8 @@ class RobotController:
                 distance_correction_factor = distance_between_beacons / position_from_beacon.distance
                 previous_beacon_theta = position_from_beacon.from_beacon.orientation
                 theta_correction_factor = (
-                                                  self.beacon_detector.last_beacon.orientation - previous_beacon_theta) / (
-                                                      odometry.theta - previous_beacon_theta)
+                    self.beacon_detector.last_beacon.orientation - previous_beacon_theta) / (
+                    odometry.theta - previous_beacon_theta)
                 save_calibration_to_file(self.robot.id,
                                          odometry.position_from_beacon.from_beacon,
                                          self.beacon_detector.last_beacon,
@@ -198,14 +236,18 @@ class RobotController:
     def read_proximity_sensors(self):
         """
         Read the proximity sensors and update the sensor memory.
-        :return: None
+
+        Returns:
+            None
         """
         self.proximity_memory.update_memory(self.robot.get_calibrate_prox())
 
     def handle_incoming_messages(self):
         """
         Handle incoming messages from the coordinator and update the robot's speed factor accordingly.
-        :return: None
+
+        Returns:
+            None
         """
         while self.robot.has_receive_msg():
             msg = self.robot.receive_msg()
@@ -217,6 +259,19 @@ class RobotController:
 
 def save_calibration_to_file(robot_id: str, from_beacon: Beacon, to_beacon: Beacon, distance_correction_factor: float,
                              theta_correction_factor: float):
+    """
+    Save calibration data to a JSON file for later use.
+
+    Args:
+        robot_id (str): The robot's unique identifier.
+        from_beacon (Beacon): The starting beacon.
+        to_beacon (Beacon): The destination beacon.
+        distance_correction_factor (float): Correction factor for distance.
+        theta_correction_factor (float): Correction factor for orientation.
+
+    Returns:
+        None
+    """
     calibration_file = "calibrate.json"
     if os.path.exists(calibration_file):
         with open("calibrate.json", "r") as f:
