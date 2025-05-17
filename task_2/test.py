@@ -9,6 +9,9 @@ basic movement and integration of the step counting functionality.
 Authors:
     Lukas Künzi
     Thirith Yang
+
+Date:
+    18th May 2025
 """
 
 from unifr_api_epuck import wrapper

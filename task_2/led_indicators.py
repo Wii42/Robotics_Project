@@ -14,6 +14,9 @@ Functions:
 Authors:
     Lukas Künzi
     Thirith Yang
+
+Date:
+    18th May 2025
 """
 
 from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck

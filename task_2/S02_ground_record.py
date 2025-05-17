@@ -7,6 +7,9 @@ to a CSV file for a specified number of steps. The data can be used for later an
 Authors:
     Lukas Künzi
     Thirith Yang
+
+Date:
+    18th May 2025
 """
 
 # run the code to generate IR sensor data 

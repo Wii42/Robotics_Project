@@ -11,6 +11,9 @@ Functions:
 Authors:
     Lukas Künzi
     Thirith Yang
+
+Date:
+    18th May 2025
 """
 
 def init_gsensors_record(self):

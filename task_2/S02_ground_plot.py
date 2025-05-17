@@ -7,6 +7,9 @@ It provides both individual sensor plots and a combined plot for all sensors, sa
 Authors:
     Lukas Künzi
     Thirith Yang
+
+Date:
+    18th May 2025
 """
 
 # run the code to plot the ground sensor results 

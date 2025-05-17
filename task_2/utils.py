@@ -1,3 +1,17 @@
+"""
+utils.py
+
+This module provides utility functions for object detection and block recognition
+using the ePuck robot's camera and detection capabilities.
+
+Authors:
+    Lukas Künzi
+    Thirith Yang
+
+Date:
+    18th May 2025
+"""
+
 from unifr_api_epuck import wrapper
 import numpy as np
 from unifr_api_epuck.epuck.epuck_wifi import WifiEpuck, Detected
