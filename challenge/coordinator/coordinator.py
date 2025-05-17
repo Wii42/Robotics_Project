@@ -131,7 +131,7 @@ class Coordinator:
         """
         for robot in self.robots:
             subprocess.Popen(
-                ['python3', 'robot/robot_controller.py', robot],
+                ['python3', 'challenge/robot/robot_controller.py', robot],
                 shell=False,
                 stdout=sys.stdout,
                 stderr=sys.stdout

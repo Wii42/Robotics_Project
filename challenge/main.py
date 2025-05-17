@@ -23,7 +23,7 @@ import challenge.gui as gui
 from challenge.coordinator import coordinator
 
 # List of robot IP addresses to be managed by the coordinator
-ROBOTS: list[str] = ['192.168.2.216', '192.168.2.208']
+ROBOTS: list[str] = ['192.168.2.214', '192.168.2.210']
 
 if __name__ == "__main__":
     # Create a queue for state updates between coordinator and GUI

@@ -1,5 +1,5 @@
 """
-S02_ground_plot.py
+ground_plot.py
 
 This script reads ground sensor data from a CSV file and generates plots for analysis.
 It provides both individual sensor plots and a combined plot for all sensors, saving the results as PNG images.

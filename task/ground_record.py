@@ -1,5 +1,5 @@
 """
-S02_ground_record.py
+ground_record.py
 
 This script connects to an ePuck robot, initializes its ground sensors, and records ground sensor data
 to a CSV file for a specified number of steps. The data can be used for later analysis and plotting.

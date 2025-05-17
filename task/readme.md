@@ -1,9 +1,4 @@
-# Robotics Challenge
-
-## Overview
-
-This project provides a system for managing and visualizing the movement of multiple robots on a track. 
-It includes a coordinator for robot distance management and a graphical user interface for real-time visualization.
+# Robotics Task
 
 
 ## Requirements
@@ -17,7 +12,6 @@ It includes a coordinator for robot distance management and a graphical user int
    ```bash
    conda activate robotics
    ```
-   Make sure the additional dependency `pygame` is installed.
 
 2. **Start the server**  
    Before running the main script, start the server with the following command:
@@ -25,11 +19,13 @@ It includes a coordinator for robot distance management and a graphical user int
    python3 -m unifr_api_epuck -g
    ```
 3. **Run the main script**  
-   Launch run the main.py from the root directory of the project, e.g the parent directory of the `challenge` folder:
-   ```bash
-   python3 -m challenge.main
+   So set up the race, run the shell script `run.sh` from the task folder.
+   
+   It will start the race manager and initialize the robots.
+   The robots will begin the race when receiving the "start" message from the web console.
+    ```bash
+    ./run.sh <robot1> <robot2>
    ```
-   This is needed to ensure that the imports and asset paths are correctly resolved.
 
 
 ## Notes

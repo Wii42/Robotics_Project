@@ -46,7 +46,7 @@ from unifr_api_epuck import wrapper
 import numpy as np
 import os
 
-import task.led_indicators as led
+import led_indicators as led
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -58,7 +58,7 @@ from challenge.robot.track_follower import TrackFollower
 from determine_side import DetermineSide
 from line_alignment import LineAlignment
 import utils
-from task.calibration import normalize_gs
+from calibration import normalize_gs
 
 # Constants for robot configuration
 MY_IP = '192.168.2.210'

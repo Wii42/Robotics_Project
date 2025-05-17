@@ -48,7 +48,7 @@ def main(state_queue: queue.Queue, beacons: list[Beacon]):
     clock = pygame.time.Clock()
 
     # Load and transform the background image of the track
-    background_image = pygame.image.load("Track_test.jpg")
+    background_image = pygame.image.load("challenge/track.jpg")
     background_image = pygame.transform.rotate(background_image, 90)
     background_image = pygame.transform.scale(background_image, (WIDTH * 0.9, HEIGHT * 0.9))
 
