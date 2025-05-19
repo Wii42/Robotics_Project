@@ -5,7 +5,7 @@ from unifr_api_epuck.epuck.epuck_wifi import Detected
 
 dir = "./object_lover_img"
 
-def object_with_largest_area(detections: list[Detected]):
+def object_with_largest_area(detections: list[Detected]) -> Detected | None:
     if len(detections) == 0:
         return None
     max_area = 0
@@ -55,25 +55,22 @@ if __name__ == "__main__":
             red_blocks =[obj for obj in detections if obj.label == "Red Block"]
             if len(red_blocks) > 0:
                 object = object_with_largest_area(red_blocks)
-                if object.label == "Red Block":
-                    #print(object.label)
-                    #print(object.x_center)
 
-                    horizontal_deviation = object.x_center - 80
-                    ds = abs(horizontal_deviation) / 80 * NORM_SPEED
-                    if horizontal_deviation < 0:
-                        speed_left = NORM_SPEED - ds
-                        speed_right = NORM_SPEED
-                    else:
-                        speed_right = NORM_SPEED - ds
-                        speed_left = NORM_SPEED
+                horizontal_deviation = object.x_center - 80
+                ds = abs(horizontal_deviation) / 80 * NORM_SPEED
+                if horizontal_deviation < 0:
+                    speed_left = NORM_SPEED - ds
+                    speed_right = NORM_SPEED
+                else:
+                    speed_right = NORM_SPEED - ds
+                    speed_left = NORM_SPEED
 
-                    print(object.height)
+                print(object.height)
 
-                    ds2 = (NORM_SPEED * object.height) / MAX_PROX
+                ds2 = (NORM_SPEED * object.height) / MAX_PROX
 
-                    speed_left = speed_left - ds2
-                    speed_right = speed_right - ds2
+                speed_left = speed_left - ds2
+                speed_right = speed_right - ds2
 
 
 

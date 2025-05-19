@@ -8,7 +8,7 @@ def camera_histogram(name,letterbox=False,letterbox_width=10) :
     
     fig = plt.figure(figsize=(15,9))
     
-    ylim = 19200
+    ylim = 19200/4
     if letterbox :
         ylim = 160*letterbox_width
         
@@ -58,8 +58,13 @@ def camera_histogram(name,letterbox=False,letterbox_width=10) :
     plt.savefig(name+'.png')
     plt.show()
 
-img = mpimg.imread('./images_216_blue1/image003.bmp') # do not use the first image as it may be black while the camera gets ready
+#img = mpimg.imread('images_216_blue_1/image003.bmp') # do not use the first image as it may be black while the camera gets ready
 
-camera_histogram('histogram')
-camera_histogram('histogram_letterbox',letterbox=True)
+robots = [205, 216]
+blocks = ["blue_1", "blue_3"]
+for robot in robots:
+    for block in blocks:
+        img = mpimg.imread(f'images_{robot}_{block}/image003.bmp')
+        camera_histogram(f'S03_histogram_{robot}_{block}')
+        camera_histogram(f'S03_histogram_letterbox_{robot}_{block}',letterbox=True)
 

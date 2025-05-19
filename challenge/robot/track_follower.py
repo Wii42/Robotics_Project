@@ -58,8 +58,8 @@ class TrackFollower:
 
     def binary_approach(self, gs: list[int]) -> tuple[float, float] | None:
         """
-        Interpret the ground sensor values using a binary approach to determine
-        the robot's position relative to the track and set wheel speeds.
+        Try to follow the track staying in the middle of the line using a binary approach, e.g. the values of the ground
+         sensor are classified into either on the track or not on the track.
 
         Args:
             gs (list[int]): List of ground sensor values.
@@ -97,7 +97,8 @@ class TrackFollower:
 
     def two_sensors_approach(self, gs: list[int]) -> tuple[float, float] | None:
         """
-        Interpret the ground sensor values using a two-sensor approach.
+        Try to follow the track with only two sensors on the line and one sensor off the line,
+        which results in following one edge of the line.
 
         Args:
             gs (list[int]): List of ground sensor values.
@@ -109,7 +110,7 @@ class TrackFollower:
         match black_list:
             case [False, False, False]:  # 0: no black
                 self.position = RobotPosition.UNKNOWN
-                print("no black, ERROR")
+                print("WARNING, no black")
                 return -1, 1
             case [False, False, True]:  # 1: extremely far left
                 self.position = RobotPosition.IS_LEFT

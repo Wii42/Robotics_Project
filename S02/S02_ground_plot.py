@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # get data from CSV file
-csv = pd.read_csv('Gsensors_perpendicular_gray.csv', index_col=0)
+csv = pd.read_csv('Gsensors_diagonal_color.csv', index_col=0)
 
 # drop last empty column
 csv.drop(csv.columns[-1], axis=1, inplace = True)

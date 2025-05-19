@@ -44,7 +44,7 @@ class Odometry:
     using wheel speeds and time intervals. It supports calibration and synchronization
     with beacons for improved accuracy.
     """
-    def __init__(self, robot: WifiEpuck, step_counter: StepCounter):
+    def __init__(self, robot: WifiEpuck):
         """
         Initialize the Odometry object.
 
@@ -59,7 +59,6 @@ class Odometry:
         self.last_time_ns: float = 0
         self.distance_left: float = 0
         self.distance_right: float = 0
-        self.step_counter: StepCounter = step_counter
         self.position_from_beacon: PositionOnTrack = PositionOnTrack(0)
         self.calibrated_by_beacon: bool = False
         self.distance_correction_factor: float = 1.0

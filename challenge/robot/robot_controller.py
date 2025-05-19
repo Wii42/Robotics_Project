@@ -155,7 +155,7 @@ class RobotController:
         self.beacon_detector: BeaconDetector = BeaconDetector(self.grey_area, GREY_MIN, LINE_MAX,
                                                               coordinator.BEACONS)
         self.track_follower: TrackFollower = TrackFollower(self.robot, self.norm_speed, LINE_MAX)
-        self.odometry: Odometry = Odometry(self.robot, self.step_counter)
+        self.odometry: Odometry = Odometry(self.robot)
 
     def adjust_speed_to_possible_obstacle(self):
         """
